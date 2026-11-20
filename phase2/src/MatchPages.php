@@ -112,42 +112,79 @@ final class MatchPages
         if($tab==='schedule'){
             $publication=$repo->schedulePublication($match);
             [$scheduleKey,$scheduleLabel,$scheduleDetail]=SchedulePages::describe($match,$publication);
+            $badgeClass=match($scheduleKey){'ready'=>'pending','published'=>'locked','changed'=>'changed','cancelled'=>'cancelled',default=>''};
+            $badgeText=match($scheduleKey){'ready'=>'พร้อมเผยแพร่','published'=>'จัดตารางและเผยแพร่แล้ว','changed'=>'เปลี่ยนแปลงการแข่งขัน','cancelled'=>'ยกเลิกการแข่งขัน',default=>'รอจัดตาราง'};
 
-            $body='<section class="card"><div class="card-head"><div><h2>กำหนดการแข่งขัน</h2><p>บันทึกวัน เวลา และสนามของคู่นี้</p></div><span class="badge">'.self::e($scheduleLabel).'</span></div><div class="card-b"><p>'.self::e($scheduleDetail).'</p>';
-            if(!$sides['a']||!$sides['b'])$body.='<div class="notice">รอทีมผ่านเข้ารอบ จึงยังไม่เปิดให้บันทึกกำหนดการแข่งขัน</div>';
-            if($sides['a']&&$sides['b']&&$current && CompetitionPolicy::can($actor,$scope,$comps->assignment($scope['id'],$actor),'schedule') && !$match['started_at'] && $match['state']!=='CANCELLED'){
+            $body='<section class="card"><div class="card-head"><div><h2>กำหนดการแข่งขัน</h2><p>บันทึกวัน เวลา และสนามของคู่นี้</p></div><span class="badge '.$badgeClass.'">'.self::e($badgeText).'</span></div>';
+            $canForm=false;
+            if(!$sides['a']||!$sides['b']){
+                $body.='<div class="card-b"><div class="notice warning">รอทีมผ่านเข้ารอบ จึงยังไม่เปิดให้บันทึกกำหนดการแข่งขัน</div></div>';
+            }elseif(!$current){
+                $body.='<div class="card-b"><div class="notice warning">คู่แข่งขันนี้อยู่ในผลจับสลากฉบับก่อนหน้า เปิดดูได้เท่านั้น</div></div>';
+            }elseif($match['started_at']||$match['state']==='CANCELLED'){
+                $body.='<div class="card-b"><div class="notice warning">ไม่เปิดให้แก้ไขกำหนดการแข่งขันในสถานะนี้</div></div>';
+            }elseif(CompetitionPolicy::can($actor,$scope,$comps->assignment($scope['id'],$actor),'schedule')){
                 $drawStatus=(new DrawRepository($db))->ceremonyStatus($scope['event_id'],$draw['id']);
-                if($drawStatus!==null&&$drawStatus!=='CONFIRMED_LOCKED')$body.='<div class="notice">ต้องยืนยันและล็อกผลจับสลากก่อนจัดตาราง</div>';
-                elseif($drawStatus===null&&!$draw['published_at'])$body.='<div class="notice">ต้องเผยแพร่ผลจับสลากก่อนจัดตาราง</div>';
+                if($drawStatus!==null&&$drawStatus!=='CONFIRMED_LOCKED')$body.='<div class="card-b"><div class="notice warning">ต้องยืนยันและล็อกผลจับสลากก่อนจัดตาราง</div></div>';
+                elseif($drawStatus===null&&!$draw['published_at'])$body.='<div class="card-b"><div class="notice warning">ต้องเผยแพร่ผลจับสลากก่อนจัดตาราง</div></div>';
                 else{
+                    $canForm=true;
                     $isFirstSchedule=$match['scheduled_start']===null;
                     $defaultIso=$match['scheduled_start'] ?? (new \DateTimeImmutable('now',new \DateTimeZone('Asia/Bangkok')))->format('c');
                     [$defDateTh,$defTime]=self::thaiDateAndTime($defaultIso);
                     $startDateTh=$value('start_date_th',$defDateTh);
-                    $body.='<form method="post" action="'.self::e(MatchDetailView::url($path,$filters)).'">'.self::hidden($context,$formVersion,'schedule').'<fieldset class="match-schedule-fieldset"'.($status===409?' disabled':'').'><div class="form-grid"><label class="field">สนาม<select required name="venue_id"><option value="">เลือกสนาม</option>';
+                    $body.='<form method="post" action="'.self::e(MatchDetailView::url($path,$filters)).'">'.self::hidden($context,$formVersion,'schedule').'<div class="card-b"><fieldset class="match-schedule-fieldset"'.($status===409?' disabled':'').'><div class="form-grid"><label class="field">สนามแข่งขัน<select required name="venue_id"><option value="">เลือกสนาม</option>';
                     foreach($repo->venues($scope['province']) as $venue)$body.='<option value="'.$venue['id'].'" '.($selectedVenue===$venue['id']?'selected':'').'>'.self::e($venue['name']).' · '.self::e($venue['district']).'</option>';
                     $body.='</select></label><div class="field"><label for="match-start-date-th">เวลาเริ่มแข่งขัน (เวลาไทย)</label><div class="thai-date-wrap"><input id="match-start-date-th" class="thai-date-input" required readonly type="text" name="start_date_th" placeholder="เลือกวันที่จากปฏิทิน" value="'.self::e($startDateTh).'" data-thai-date-input></div></div>';
                     if(!$isFirstSchedule)$body.='<label class="field">เหตุผลในการแก้ไขตาราง (จำเป็น)<input required name="reason" maxlength="300" value="'.self::e($value('reason','')).'"></label>';
-                    $body.='</div><button class="btn btn-primary" type="submit">บันทึกตารางแข่งขัน</button></fieldset></form>';
-                    if($status!==409&&$match['scheduled_start']!==null)foreach(['postpone'=>'เลื่อนการแข่งขัน','cancel'=>'ยกเลิกการแข่งขัน','start'=>'เริ่มการแข่งขัน'] as $op=>$label){if(in_array($op,['start','postpone'],true)&&$match['state']!=='SCHEDULED')continue;if($op==='cancel'&&!in_array($match['state'],['SCHEDULED','POSTPONED'],true))continue;$body.='<form method="post" action="'.self::e(MatchDetailView::url($path,$filters)).'" class="draw-action">'.self::hidden($context,$match['version'],$op).'<label class="field">เหตุผล · '.$label.'<input required name="reason" maxlength="300"></label><button class="btn btn-light" type="submit">'.$label.'</button></form>';}
+                    $body.='</div></fieldset>';
+                    if($publication){
+                        $snap=$publication['snapshot'] ?? null;
+                        $pubTime=self::time($snap['scheduled_start'] ?? $match['scheduled_start']).' · '.self::e($snap['venue_name'] ?? $match['venue_name'] ?? 'ยังไม่กำหนดสนาม');
+                        $body.='<div class="notice success"><strong>ข้อมูลที่เผยแพร่ล่าสุด</strong><p>'.$pubTime.($scheduleKey==='changed'?' — กำหนดใหม่ยังไม่เผยแพร่':'').'</p></div>';
+                    }else{
+                        $body.='<div class="notice"><strong>บันทึกแล้วต้องเผยแพร่แยกต่างหาก</strong><p>หลังบันทึกครบ คู่แข่งขันจะพร้อมเผยแพร่ ให้กลับไปเลือกเผยแพร่จากตารางการแข่งขัน</p></div>';
+                    }
+                    $body.='</div><div class="panel-action"><p>'.($scheduleKey==='changed'?'ตรวจทานกำหนดใหม่ก่อนเผยแพร่อีกครั้ง':'ข้อมูลจะบันทึกเป็นร่างก่อนเผยแพร่').'</p><div class="actions"><button class="btn primary" type="submit">บันทึกกำหนดการแข่งขัน</button></div></div></form>';
                 }
+            }else{
+                $body.='<div class="card-b"><div class="notice">บัญชีนี้เปิดดูได้อย่างเดียว</div></div>';
             }
-
-            if(!$current)$body.='<div class="notice">คู่แข่งขันนี้อยู่ในผลจับสลากฉบับก่อนหน้า เปิดดูได้เท่านั้น</div>';
-            elseif($match['started_at']||$match['state']==='CANCELLED')$body.='<div class="notice">ไม่เปิดให้แก้ไขกำหนดการแข่งขันในสถานะนี้</div>';
-            if($match['scheduled_start']!==null)$body.='<dl class="match-schedule-summary"><dt>เวลาเริ่มแข่งขัน</dt><dd>'.self::time($match['scheduled_start']).'</dd><dt>สนาม</dt><dd>'.self::e($match['venue_name'] ?? 'ยังไม่กำหนดสนาม').'</dd></dl>';
-            $body.='</div></section>';
+            $body.='</section>';
+            if($canForm&&$status!==409&&$match['scheduled_start']!==null){
+                $opForms='';
+                foreach(['postpone'=>'เลื่อนการแข่งขัน','cancel'=>'ยกเลิกการแข่งขัน','start'=>'เริ่มการแข่งขัน'] as $op=>$label){
+                    if(in_array($op,['start','postpone'],true)&&$match['state']!=='SCHEDULED')continue;
+                    if($op==='cancel'&&!in_array($match['state'],['SCHEDULED','POSTPONED'],true))continue;
+                    $opForms.='<form method="post" action="'.self::e(MatchDetailView::url($path,$filters)).'" class="draw-action">'.self::hidden($context,$match['version'],$op).'<label class="field">เหตุผล · '.$label.'<input required name="reason" maxlength="300"></label><button class="btn btn-light" type="submit">'.$label.'</button></form>';
+                }
+                if($opForms!=='')$body.='<section class="card"><div class="card-head"><div><h2>ปรับสถานะการแข่งขัน</h2><p>เลื่อน ยกเลิก หรือเริ่มการแข่งขันคู่นี้</p></div></div><div class="card-b">'.$opForms.'</div></section>';
+            }
             $body.='<section class="card"><div class="card-head"><div><h2>งานหลังการแข่งขัน</h2><p>บันทึกจากเอกสารกระดาษ แล้วตรวจสอบและยืนยันทั้งชุด</p></div></div><div class="card-b"><div class="actions"><a class="btn" href="'.self::e(MatchDetailView::url($path.'/results',$filters)).'">'.WorkspaceView::icon('file').'บันทึกรายชื่อและผลการแข่งขัน '.WorkspaceView::icon('arrow').'</a></div></div></section>';
         }elseif($tab==='post'){
-            $body='<section class="card"><div class="card-head"><h2>ข้อมูลหลังการแข่งขัน</h2></div><div class="card-b">'.ResultPages::publicResult($db,$match['id']);
+            $official=$repo->officialResult($match['id']);
+            $stepLineupMark=$official?'✓':'–';
+            $stepResultMark=$official?'✓':'2';
+            $body='<nav class="post-steps" aria-label="ขั้นตอนบันทึกข้อมูลหลังแข่งขัน">'
+                .'<a class="post-step" href="'.self::e(MatchDetailView::url($path.'/lineups',$filters)).'"><span>'.$stepLineupMark.'</span>รายชื่อผู้เล่น (ไม่บังคับ)</a>'
+                .'<a class="post-step active" href="'.self::e(MatchDetailView::url($path.'/results',$filters)).'"><span>'.$stepResultMark.'</span>ผลการแข่งขัน</a>'
+                .'<a class="post-step" href="'.self::e(MatchDetailView::url($path.'/results',$filters)).'"><span>3</span>ตรวจสอบและยืนยัน</a>'
+                .'</nav>'
+                .'<section class="card"><div class="card-head"><div><h2>ข้อมูลหลังการแข่งขัน</h2><p>บันทึกจากเอกสารกระดาษ แล้วตรวจสอบและยืนยันทั้งชุด</p></div></div><div class="card-b">'.ResultPages::publicResult($db,$match['id']);
             if($current)$body.='<div class="action-row"><a class="btn" href="'.self::e(MatchDetailView::url($path.'/lineups',$filters)).'">รายชื่อผู้เล่น</a><a class="btn primary" href="'.self::e(MatchDetailView::url($path.'/results',$filters)).'">บันทึกและยืนยันผล</a></div>';
             $body.='</div></section>';
         }else{
-            $body='<section class="card"><div class="card-head"><h2>ประวัติของคู่แข่งขันนี้</h2></div><ul class="match-history">';
+            $body='<section class="card"><div class="card-head"><h2>ประวัติของคู่แข่งขันนี้</h2></div><div class="timeline">';
             $history=$repo->history($match['id']);
-            foreach($history as $h){$snapshot=json_decode($h['snapshot'],true);$body.='<li><strong>v'.$h['version'].' · '.self::e(self::OPERATIONS[$h['operation']] ?? 'ปรับข้อมูลแมตช์').'</strong><p>'.self::e($h['reason']).' · '.self::e($h['actor_id']).' · '.self::e($h['created_at']).'</p><p>'.self::time($snapshot['scheduled_start'] ?? null).' – '.self::time($snapshot['scheduled_end'] ?? null).' · '.self::e($snapshot['venue_name'] ?? 'รอจัดสนาม').'</p></li>';}
-            if(!$history)$body.='<li>ยังไม่มีการดำเนินการ</li>';
-            $body.='</ul></section>';
+            foreach($history as $h){
+                $snapshot=json_decode($h['snapshot'],true);
+                $schedStr=self::time($snapshot['scheduled_start'] ?? null).' · '.self::e($snapshot['venue_name'] ?? 'รอจัดสนาม');
+                $body.='<div class="event"><span class="event-dot"></span><div><b>v'.$h['version'].' · '.self::e(self::OPERATIONS[$h['operation']] ?? 'ปรับข้อมูลแมตช์').'</b>'
+                    .'<p>'.self::e(self::time($h['created_at'] ?? null)).' · '.self::e($h['actor_id']).'</p>'
+                    .'<p>'.self::e($h['reason']).' · '.$schedStr.'</p></div></div>';
+            }
+            if(!$history)$body.='<p class="small muted" style="padding:16px 22px">ยังไม่มีการดำเนินการ</p>';
+            $body.='</div></section>';
         }
         return MatchDetailView::page($notice.$body,$scope,$match,$draw,$repo->resolved($match),$repo->officialResult($match['id']),$context,$filters,$path,$tab,$status);
     }
