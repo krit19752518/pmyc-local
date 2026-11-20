@@ -204,3 +204,19 @@
   .d-caption { grid-column: 1; }
 }
 .schedule-inline-form{display:inline-flex;align-items:center;gap:8px;flex-shrink:0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.match-teams{display:flex;gap:9px;align-items:center;flex-wrap:wrap;min-width:250px}
+.match-teams strong{font-size:13px;font-weight:500;color:var(--ink)}
+.mini-crest{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:#eef3fa;color:var(--navy);font-size:11px;font-weight:700;flex-shrink:0}
+.mini-crest.alt{background:#fdf3d7;color:#7a5800}
+.versus{font-size:11px;color:#a2afbf;margin:0 4px}
+.publication-note{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.schedule-table th{color:#8491a2;font-size:12px;font-weight:500;background:#fafbfe;padding:12px 20px}
+.schedule-table td{padding:16px 20px;font-size:13px;vertical-align:middle}
+.schedule-table td strong{font-weight:600;color:var(--ink)}
+.schedule-table td small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.btn.primary{background:#0a67f9;border-color:#0a67f9;color:#fff}
+.btn.primary:hover:not(:disabled){background:#0754ce;border-color:#0754ce}
+.btn.primary:disabled{background:#0a67f9;border-color:#0a67f9;opacity:.45;color:#fff;cursor:not-allowed}
+#schedule-batch-list{margin:12px 0;padding-left:18px;display:grid;gap:8px}
+#schedule-batch-list li{font-size:13px;line-height:1.45}

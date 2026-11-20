@@ -17,7 +17,7 @@ describe('issue91 contextual v17.1 match detail',()=>{
   expect(html).toMatch(/nav-link active[^>]+pending-schedule/);
   expect(html).toContain('name="version" value="7"');expect(html).toContain('name="_csrf" value="synthetic-only"');
   expect(html).toContain('name="operation" value="schedule"');expect(html).toContain('name="start_date_th"');
-  const back=html.match(/href="([^"]+)">กลับตารางการแข่งขัน/)![1];
+  const back=html.match(/href="([^"]+)">(?:<svg[^>]*><path[^>]*\/><\/svg>)?กลับตารางการแข่งขัน/)![1];
   const url=new URL(back.replace(/&amp;/g,'&'),'https://test.invalid');
   expect(url.pathname).toBe('/phase2demo/workspace/pending-schedule');
   expect(url.searchParams.get('district')).toBe('จอมทอง');expect(url.searchParams.get('data_mode')).toBe('demo');
