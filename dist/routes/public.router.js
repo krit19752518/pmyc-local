@@ -4,7 +4,10 @@ exports.publicRouter = void 0;
 const express_1 = require("express");
 const layout_1 = require("../layout");
 const helpers_1 = require("../utils/helpers");
+const publicWebsite_router_1 = require("./publicWebsite.router");
 exports.publicRouter = (0, express_1.Router)();
+// Public v4 owns only public entry aliases and its own assets; legacy service routes remain.
+exports.publicRouter.use((0, publicWebsite_router_1.createPublicWebsiteRouter)());
 // Page 1: /index.php & /
 exports.publicRouter.get(['/', '/index.php'], (req, res) => {
     const base = (0, helpers_1.getBaseUrl)(req);
