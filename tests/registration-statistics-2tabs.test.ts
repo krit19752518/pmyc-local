@@ -186,7 +186,7 @@ describe('Registration & Approval Statistics 2-Tabs (Issue #2)', () => {
     expect(pageRes.status).toBe(200);
     expect(pageRes.text).toContain('/api/authorized/age-group-approval-statistics');
     expect(pageRes.text).toContain('/admin/api/age-group-approval-statistics');
-    expect(pageRes.text).toContain('app.js?v=issue4-1');
+    expect(pageRes.text).toContain('app.js?v=issue6-1');
 
     const unauthRes = await request(app).get('/api/authorized/age-group-approval-statistics?preset=all');
     expect(unauthRes.status).toBe(403);
