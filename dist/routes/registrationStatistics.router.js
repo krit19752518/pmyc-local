@@ -49,7 +49,7 @@ async function isAuthorizedForApprovalStats(req) {
                 return true;
         }
     }
-    for (const centralToken of getCookieValues(req, 'admin_session')) {
+    for (const centralToken of [...getCookieValues(req, 'pmyc_admin_session'), ...getCookieValues(req, 'admin_session')]) {
         const central = (0, adminSession_service_1.verifyAdminSessionToken)(centralToken, 'central');
         if (central) {
             const user = await (0, adminAuth_1.getAdminUserByUsername)(central.username);

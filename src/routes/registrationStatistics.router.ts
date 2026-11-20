@@ -44,7 +44,7 @@ async function isAuthorizedForApprovalStats(req: Request): Promise<boolean> {
       if (user && user.roleCode === 'SAT_OFFICER') return true;
     }
   }
-  for (const centralToken of getCookieValues(req, 'admin_session')) {
+  for (const centralToken of [...getCookieValues(req, 'pmyc_admin_session'), ...getCookieValues(req, 'admin_session')]) {
     const central = verifyAdminSessionToken(centralToken, 'central');
     if (central) {
       const user = await getAdminUserByUsername(central.username);
