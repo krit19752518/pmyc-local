@@ -85,11 +85,10 @@ describe('issue65 v16 workspace dashboard and blank navigation',()=>{
 
   it('keeps publication unavailable rather than treating scheduled/published draws as schedule publication',()=>{
     const {html}=fixture('large');
-    const cards=[...html.matchAll(/<div class="kpi[^"]*" data-publication-unavailable>[\s\S]*?(?=<div class="kpi">)/g)];
-    expect(cards.length).toBeGreaterThan(0);
-    expect((html.match(/data-publication-unavailable/g)||[])).toHaveLength(2);
-    expect(html).toContain('ยังไม่มีข้อมูลสถานะตาราง');
-    expect(html).toContain('class="kpi-value">—<small>คู่');
+    expect(html).toContain('สถานะตารางการแข่งขัน');
+    expect(html).toContain('data-dashboard-block="schedule:all"');
+    expect(html).toContain('data-dashboard-block="schedule:unscheduled"');
+    expect(html).toContain('data-dashboard-block="schedule:ready"');
     expect(html).not.toContain('IN_PROGRESS');
     expect(html).not.toContain('CONFIRMED_LOCKED');
   });
@@ -123,7 +122,7 @@ describe('issue65 v16 workspace dashboard and blank navigation',()=>{
     const r=fixture('no-roster');
     expect(r.data.team_count).toBeNull();
     expect(r.data.match_count).toBe(0);
-    expect(r.html).toContain('ยังไม่มีข้อมูลทีมในขอบเขตนี้');
+    expect(r.html).toContain('<span class="d-value">—<span class="d-unit">ทีม</span></span>');
     expect(r.html).toContain('ยังไม่มีข้อมูลคู่แข่งขันสำหรับคำนวณ');
     expect(r.html).not.toContain('>0%</b>');
     expect(r.html).not.toContain('<progress');

@@ -84,9 +84,91 @@ final class DashboardPages
             if(!$complete)return WorkspaceView::page('dashboard',$html.'<div class="notice" role="status">กรุณาเลือกตัวกรองให้ครบเพื่อแสดงสถิติ</div>',$context,$f);
         }
         $count=fn($v)=>$available&&$v!==null?number_format($v):'—';
-        $html.='<div class="kpis"><div class="kpi">'.$icon('users').'<div class="kpi-label">ทีมในขอบเขตที่เลือก</div><div class="kpi-value">'.$count($m['team_count']).'<small>ทีม</small></div><div class="kpi-foot">'.($m['has_roster']||$m['teams_source']==='registration'?($f['stage']==='2'?'ทีมผ่านเข้ารอบ':'ผ่านการอนุมัติการลงทะเบียน'):'ยังไม่มีข้อมูลทีมในขอบเขตนี้').'</div></div>';
-        foreach([['calendar','พร้อมเผยแพร่ตาราง',' accent'],['eye','เผยแพร่ตารางแล้ว','']] as [$i,$label,$cls])$html.='<div class="kpi'.$cls.'" data-publication-unavailable>'.$icon($i).'<div class="kpi-label">'.$label.'</div><div class="kpi-value">—<small>คู่</small></div><div class="kpi-foot">ยังไม่มีข้อมูลสถานะตาราง</div></div>';
-        $html.='<div class="kpi">'.$icon('check').'<div class="kpi-label">ยืนยันข้อมูลหลังแข่งขัน</div><div class="kpi-value">'.$count($m['confirmed_count']).'<small>/ '.$count($m['match_count']).' คู่</small></div><div class="kpi-foot">ยืนยันผลการแข่งขันแล้ว</div></div></div>';
+        $b=$m['dashboard_7blocks'] ?? DashboardReadModel::empty7Blocks();
+        $teamsError=!$available||!empty($b['teams_error']);
+        $tAll=$teamsError?'—':($b['teams_all']!==null?number_format((int)$b['teams_all']):$count($m['team_count']));
+        $tOut=$teamsError?'—':($b['teams_outside']!==null?number_format((int)$b['teams_outside']):'0');
+        $tDraw=$teamsError?'—':($b['teams_draw']!==null?number_format((int)$b['teams_draw']):'0');
+        $drawCount=(int)($b['draw_count'] ?? 0);
+        $drawVersion=$b['draw_version'] ?? $m['draw_version'];
+        $drawStatus=$b['draw_status'] ?? ($m['draw_status'] ?? 'NONE');
+        $beforeDraw=$drawCount===0;
+        $pendingDraw=$drawStatus==='PENDING_CONFIRMATION';
+        $drawStatusText=$beforeDraw?'ยังไม่จับสลาก':($pendingDraw?'รอยืนยันผล':'ยืนยันผลแล้ว');
+        $outsideCount=(int)($b['teams_outside'] ?? 0);
+        $outsideCaption=!$teamsError&&$outsideCount>0?($beforeDraw?'ตรวจรายชื่อก่อนจับสลาก':'ตรวจทีมใหม่เพื่อพิจารณาสุ่มใหม่'):'';
+        $drawRefCaption=$beforeDraw?'':'อ้างอิงผล V'.(int)$drawVersion;
+        $changedCount=(int)($b['teams_changed'] ?? 0);
+        $sAll=(int)($b['schedule_all'] ?? 0);
+        $sWait=(int)($b['schedule_unscheduled'] ?? 0);
+        $sReady=(int)($b['schedule_ready'] ?? 0);
+        $pAwait=(int)($b['post_awaiting'] ?? 0);
+        $defaultView=!$teamsError&&$outsideCount>0?'team:outside':'team:all';
+
+        $tile=function(string $view,string $label,string $val,string $unit,string $caption,bool $alert=false,bool $disabled=false)use($e,$defaultView):string{
+            $pressed=$defaultView===$view?'true':'false';
+            return '<button type="button" class="d-tile'.($alert?' d-alert':'').'" data-dashboard-block="'.$e($view).'" aria-pressed="'.$pressed.'"'.($disabled?' disabled':'').'>'
+                .'<span class="d-label">'.$e($label).'</span>'
+                .'<span class="d-value">'.$e($val).'<span class="d-unit">'.$e($unit).'</span></span>'
+                .'<span class="d-caption">'.$e($caption).'</span></button>';
+        };
+
+        $payload=[
+            'defaultView'=>$defaultView,
+            'before'=>$beforeDraw,
+            'pending'=>$pendingDraw,
+            'error'=>$teamsError,
+            'drawVersion'=>$drawVersion,
+            'urls'=>[
+                'setup'=>WorkspaceView::url('setup',$f),
+                'result'=>WorkspaceView::url('result',$f),
+                'schedule'=>WorkspaceView::url('schedule',$f),
+                'detail'=>WorkspaceView::url('detail',$f),
+            ],
+            'lists'=>$b['lists'] ?? [],
+        ];
+        $payloadJson=json_encode($payload,JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT);
+
+        $html.='<div class="d-dashboard" data-dashboard-payload="'.$e($payloadJson ?: '{}').'">';
+        $html.='<section class="d-section" aria-labelledby="dashboard-teams-heading"><h2 id="dashboard-teams-heading">ทีมในขอบเขตที่เลือก</h2><div class="d-grid">'
+            .$tile('team:all','จำนวนทีมทั้งหมด',$tAll,'ทีม','ทีมและรุ่นที่เลือกอนุมัติปัจจุบัน',false,$teamsError)
+            .$tile('team:outside','ทีมที่ยังไม่อยู่ในผลจับสลาก',$tOut,'ทีม',$outsideCaption,!$teamsError&&$outsideCount>0,$teamsError)
+            .$tile('team:draw','ทีมที่จับสลากแล้ว',$tDraw,'ทีม',$drawRefCaption,false,$teamsError)
+            .'</div><p class="d-small" id="dashboard-draw-reference" role="status">จับสลากแล้ว '.$drawCount.' ครั้ง · '.$e($drawStatusText).'</p>';
+        if($teamsError){
+            $html.='<div class="d-note d-error" id="dashboard-team-warning" role="status">โหลดข้อมูลการอนุมัติทีมไม่สำเร็จ</div>';
+        }elseif($changedCount>0){
+            $html.='<div class="d-note" id="dashboard-team-warning" role="status"><span>ทีมในผลจับสลากที่สิทธิ์เปลี่ยน '.$changedCount.' ทีม</span><button type="button" class="btn" data-dashboard-block="team:changed">ตรวจรายชื่อ</button></div>';
+        }
+        $html.='</section>';
+
+        $html.='<section class="d-section" aria-labelledby="dashboard-schedule-heading"><h2 id="dashboard-schedule-heading">สถานะตารางการแข่งขัน</h2><div class="d-grid">'
+            .$tile('schedule:all','จำนวนคู่แข่งขันทั้งหมด',$available?number_format($sAll):'—','คู่','มีทีมครบทั้งสองฝั่ง')
+            .$tile('schedule:unscheduled','รอจัดตาราง',$available?number_format($sWait):'—','คู่',$sWait>0?($pendingDraw?'ยืนยันผลจับสลากก่อนจัดตาราง':'กำหนดวัน เวลา และสนาม'):'',$available&&$sWait>0)
+            .$tile('schedule:ready','พร้อมเผยแพร่',$available?number_format($sReady):'—','คู่',$sReady>0?'ตรวจและเผยแพร่ตาราง':'',$available&&$sReady>0)
+            .'</div></section>';
+
+        $html.='<section class="d-section" aria-labelledby="dashboard-post-heading"><h2 id="dashboard-post-heading">ข้อมูลหลังแข่งขัน</h2><div class="d-grid">'
+            .$tile('post:awaiting','รอบันทึกผล',$available?number_format($pAwait):'—','คู่','คู่ที่แข่งผ่านไปแล้วและยังไม่มีผลบันทึก',$available&&$pAwait>0)
+            .'</div></section>';
+
+        $initialRows=$b['lists'][$defaultView] ?? [];
+        $initialTitle=$defaultView==='team:outside'?'ทีมที่ยังไม่อยู่ในผลจับสลาก':'ทีมทั้งหมดที่อนุมัติในขอบเขต';
+        $html.='<section class="d-list" id="dashboard-list" aria-labelledby="dashboard-list-title">'
+            .'<div class="d-row"><h2 id="dashboard-list-title" aria-live="polite">'.$e($initialTitle).'</h2><span class="d-badge" id="dashboard-list-count">'.($teamsError?'—':count($initialRows).' ทีม').'</span></div>'
+            .'<div id="dashboard-list-body">';
+        if($teamsError){
+            $html.='<p class="d-note d-error">โหลดข้อมูลการอนุมัติไม่สำเร็จ จึงยังระบุยอดทีมปัจจุบันไม่ได้</p>';
+        }elseif($initialRows){
+            $html.='<div class="d-tablewrap"><table><thead><tr><th>ทีม</th><th>สถานะในผลจับสลาก</th><th>ดำเนินการ</th></tr></thead><tbody>';
+            foreach($initialRows as $row){
+                $html.='<tr><td>'.$e($row['name'] ?? '').'</td><td>'.(!empty($row['in_draw'])?'อยู่ในผลจับสลาก':'ยังไม่อยู่ในผล').'</td><td><a class="btn text compact" href="'.$href('setup').'">เปิดหน้าทีม/จับสลาก '.$icon('arrow').'</a></td></tr>';
+            }
+            $html.='</tbody></table></div>';
+        }else{
+            $html.='<p class="muted">ไม่มีทีมในกลุ่มนี้</p>';
+        }
+        $html.='</div></section></div>';
         $scope=implode(' · ',array_filter([$f['province'], $f['stage']==='2'?'ระดับจังหวัด':$f['district'],EventDraft::DIVISIONS[$f['division_code']] ?? '']));
         $scopeBadge=self::scopeStatus($m);
         $badgeClass='badge'.($scopeBadge['class']!==''?' '.$scopeBadge['class']:'');

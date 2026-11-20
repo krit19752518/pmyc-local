@@ -39,7 +39,19 @@ final class DashboardReadModel
         return ['filters'=>self::query($query,$actor),'options'=>['seasons'=>[],'events'=>[],'provinces'=>[],'districts'=>[]],
             'scope_count'=>0,'team_count'=>null,'match_count'=>0,'confirmed_count'=>0,'scheduled_count'=>0,'published_count'=>0,
             'draw_version'=>null,'draw_status'=>null,'matches'=>[],'activity'=>[],
-            'has_roster'=>false,'scope_names'=>[],'event'=>null,'setup_state'=>null,'eligible_teams'=>null,'teams_source'=>null,'no_demo_area'=>false];
+            'has_roster'=>false,'scope_names'=>[],'event'=>null,'setup_state'=>null,'eligible_teams'=>null,'teams_source'=>null,'no_demo_area'=>false,
+            'dashboard_7blocks'=>self::empty7Blocks()];
+    }
+
+    public static function empty7Blocks():array
+    {
+        return [
+            'teams_error'=>false,
+            'teams_all'=>null,'teams_draw'=>null,'teams_outside'=>null,'teams_changed'=>0,
+            'lists'=>['team:all'=>[],'team:outside'=>[],'team:draw'=>[],'team:changed'=>[],'schedule:all'=>[],'schedule:unscheduled'=>[],'schedule:ready'=>[],'post:awaiting'=>[]],
+            'draw_count'=>0,'draw_version'=>null,'draw_status'=>'NONE',
+            'schedule_all'=>0,'schedule_unscheduled'=>0,'schedule_ready'=>0,'post_awaiting'=>0,
+        ];
     }
 
     /** National event metadata enables Phase 1 previews; competition access remains assignment scoped. */
@@ -228,6 +240,7 @@ final class DashboardReadModel
                     $out['confirmed_count']++;$winners[$match['draw_id'].':'.$match['number']]=$match['confirmed_winner'];
                 }
             }
+            $out['dashboard_7blocks']=$this->build7Blocks($event,$f,$scopes,$teams,$drawsByComp,$matches,$names,$winners,$out['eligible_teams']);
             usort($matches,fn($a,$b)=>(strtotime($b['changed_at'] ?? '')?:0)<=>(strtotime($a['changed_at'] ?? '')?:0)
                 ?:strcmp($a['competition_id'],$b['competition_id'])?:((int)$a['number']<=>(int)$b['number']));
             foreach(array_slice($matches,0,4) as $match){
@@ -268,6 +281,147 @@ final class DashboardReadModel
     }
 
     private static function truth(mixed $v):bool{return in_array($v,[true,1,'1','t','true'],true);}
+
+    private function isPg():bool
+    {
+        try{
+            return $this->db instanceof \PDO && $this->db->getAttribute(\PDO::ATTR_DRIVER_NAME)==='pgsql';
+        }catch(\Throwable){
+            return false;
+        }
+    }
+
+    private function build7Blocks(?array $event,array $f,array $scopes,array $rosterTeams,array $drawsByComp,array $matches,array $names,array $winners,?array $eligibleTeams=null):array
+    {
+        $b=self::empty7Blocks();
+        $isPg=$this->isPg();
+        $ids=array_column($scopes,'id');
+        if($ids){
+            if($isPg){
+                try{
+                    $in=implode(',',array_fill(0,count($ids),'?'));
+                    $dc=$this->rows("SELECT COUNT(DISTINCT d.id) AS c FROM p2_draw_version d WHERE d.competition_id IN ($in)",$ids);
+                    $b['draw_count']=(int)($dc[0]['c'] ?? 0);
+                }catch(\Throwable){
+                    $b['draw_count']=count($drawsByComp);
+                }
+            }else{
+                $b['draw_count']=count($drawsByComp);
+            }
+        }
+        $resultMatchIds=[];
+        $matchIds=array_values(array_filter(array_column($matches,'id')));
+        if($matchIds&&$isPg){
+            try{
+                $inM=implode(',',array_fill(0,count($matchIds),'?'));
+                foreach($this->rows("SELECT DISTINCT match_id FROM p2_result_revision WHERE match_id IN ($inM) AND state IN ('DRAFT','CONFIRMED')",$matchIds) as $rm){
+                    $resultMatchIds[(string)$rm['match_id']]=true;
+                }
+            }catch(\Throwable){
+                $resultMatchIds=[];
+            }
+        }
+        if($drawsByComp){
+            $b['draw_version']=max(array_map(fn($d)=>(int)$d['draw_version'],$drawsByComp));
+            $lockedDraws=count(array_filter($drawsByComp,fn($d)=>($d['ceremony_status'] ?? null)==='CONFIRMED_LOCKED'||self::truth($d['draw_published'] ?? false)));
+            $b['draw_status']=$lockedDraws===count($drawsByComp)?'CONFIRMED_LOCKED':'PENDING_CONFIRMATION';
+        }
+        // Snapshot teams (those belonging to competitions with a draw_version)
+        $snapshotMap=[];
+        foreach($rosterTeams as $t){
+            if(!empty($t['draw_id']))$snapshotMap[(string)$t['source_team_id']]=$t['team_name'];
+        }
+        // Current eligible teams from registration (Stage 1) or roster
+        $currentList=null;
+        if($eligibleTeams!==null){
+            $currentList=[];
+            foreach($eligibleTeams as $c){
+                $id=(string)($c['source_team_id'] ?? $c['id'] ?? '');
+                if($id!=='')$currentList[$id]=['id'=>$id,'name'=>(string)($c['name'] ?? $c['team_name'] ?? '')];
+            }
+        }elseif($event&&(int)$f['stage']===1&&$f['district']!==''&&$isPg){
+            try{
+                $cands=(new RegistrationAdapter($this->db))->candidates(['stage'=>1,'division_code'=>$f['division_code'],'province'=>$f['province'],'district'=>$f['district'],'is_test'=>self::truth($event['is_test'])],false,true);
+                $currentList=[];
+                foreach($cands as $c){
+                    $id=(string)($c['source_team_id'] ?? $c['id'] ?? '');
+                    if($id!=='')$currentList[$id]=['id'=>$id,'name'=>(string)($c['name'] ?? $c['team_name'] ?? '')];
+                }
+            }catch(\Throwable){
+                $b['teams_error']=true;
+            }
+        }
+        if($currentList===null&&!$b['teams_error']){
+            $currentList=[];
+            foreach($rosterTeams as $t){
+                $id=(string)$t['source_team_id'];
+                if($id!==''&&!isset($currentList[$id]))$currentList[$id]=['id'=>$id,'name'=>(string)$t['team_name']];
+            }
+        }
+        if(!$b['teams_error']&&$currentList!==null){
+            $inDraw=[];$outside=[];
+            foreach($currentList as $id=>$t){
+                $row=['id'=>$id,'name'=>$t['name'],'in_draw'=>isset($snapshotMap[$id])];
+                if($row['in_draw'])$inDraw[]=$row;else $outside[]=$row;
+            }
+            $changed=[];
+            foreach($snapshotMap as $id=>$name){
+                if(!isset($currentList[$id]))$changed[]=['id'=>$id,'name'=>$name,'in_draw'=>true];
+            }
+            $b['teams_all']=count($currentList);
+            $b['teams_draw']=count($inDraw);
+            $b['teams_outside']=count($outside);
+            $b['teams_changed']=count($changed);
+            $b['lists']['team:all']=array_values($currentList);
+            $b['lists']['team:draw']=$inDraw;
+            $b['lists']['team:outside']=$outside;
+            $b['lists']['team:changed']=$changed;
+        }
+        // Two-sided matches (skip BYE and pending winner slots)
+        $nowTs=time();
+        $resolveSide=function($json)use($names,$winners):?array{
+            $side=is_array($json)?$json:json_decode((string)$json,true);
+            if(!is_array($side))return null;
+            if(($side['type'] ?? '')==='bye')return null;
+            if(($side['type'] ?? '')==='team'&&!empty($side['source_team_id']))return ['id'=>(string)$side['source_team_id']];
+            return null;
+        };
+        foreach($matches as $match){
+            $sa=$resolveSide($match['side_a']);$sb=$resolveSide($match['side_b']);
+            if(!$sa||!$sb){
+                // Check if winner-based match already has both resolved winners
+                $saRaw=is_array($match['side_a'])?$match['side_a']:json_decode((string)$match['side_a'],true);
+                $sbRaw=is_array($match['side_b'])?$match['side_b']:json_decode((string)$match['side_b'],true);
+                $idA=($saRaw['type'] ?? '')==='team'?($saRaw['source_team_id'] ?? null):(($saRaw['type'] ?? '')==='winner'?($winners[$match['draw_id'].':'.($saRaw['match'] ?? '')] ?? null):null);
+                $idB=($sbRaw['type'] ?? '')==='team'?($sbRaw['source_team_id'] ?? null):(($sbRaw['type'] ?? '')==='winner'?($winners[$match['draw_id'].':'.($sbRaw['match'] ?? '')] ?? null):null);
+                if(!$idA||!$idB)continue;
+                $nameA=$names[$match['competition_id'].':'.$idA] ?? 'ทีมในรายชื่อ';
+                $nameB=$names[$match['competition_id'].':'.$idB] ?? 'ทีมในรายชื่อ';
+            }else{
+                $nameA=$names[$match['competition_id'].':'.$sa['id']] ?? 'ทีมในรายชื่อ';
+                $nameB=$names[$match['competition_id'].':'.$sb['id']] ?? 'ทีมในรายชื่อ';
+            }
+            $cancelled=($match['state'] ?? '')==='CANCELLED';
+            $scheduled=$match['scheduled_start']!==null&&$match['venue_name']!==null&&!$cancelled;
+            $published=self::truth($match['schedule_published'] ?? false);
+            $hasResult=($match['result_state'] ?? null)==='CONFIRMED'||isset($resultMatchIds[(string)$match['id']]);
+            $isPast=$match['scheduled_start']!==null&&(strtotime((string)$match['scheduled_start'])?:PHP_INT_MAX)<$nowTs;
+            $statusKey=$cancelled?'cancelled':($published?'published':($scheduled?'ready':'unscheduled'));
+            $awaiting=$scheduled&&$isPast&&!$hasResult&&!$cancelled;
+            $item=['id'=>$match['id'],'competition_id'=>$match['competition_id'],'number'=>'M'.str_pad((string)$match['number'],2,'0',STR_PAD_LEFT),
+                'round'=>(int)$match['round'],'home'=>$nameA,'away'=>$nameB,'status'=>$statusKey,
+                'scheduled_start'=>$match['scheduled_start'],'venue'=>$match['venue_name'] ?: 'ยังไม่กำหนดสนาม','awaiting'=>$awaiting];
+            $b['lists']['schedule:all'][]=$item;
+            if($statusKey==='unscheduled')$b['lists']['schedule:unscheduled'][]=$item;
+            if($statusKey==='ready')$b['lists']['schedule:ready'][]=$item;
+            if($awaiting)$b['lists']['post:awaiting'][]=$item;
+        }
+        $b['schedule_all']=count($b['lists']['schedule:all']);
+        $b['schedule_unscheduled']=count($b['lists']['schedule:unscheduled']);
+        $b['schedule_ready']=count($b['lists']['schedule:ready']);
+        $b['post_awaiting']=count($b['lists']['post:awaiting']);
+        return $b;
+    }
     private function rows(string $sql,array $values):array{$s=$this->db->prepare($sql);$s->execute($values);return $s->fetchAll();}
 
     /** Resolve human-readable actor names from admin_users/sat_officers when actor_name is absent from audit state. */
