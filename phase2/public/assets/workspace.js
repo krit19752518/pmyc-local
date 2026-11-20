@@ -205,11 +205,16 @@
     const scheduleChoices = [...container.querySelectorAll('[data-schedule-select]')];
     const selectAll = container.querySelector('[data-schedule-select-all]');
     const publish = container.querySelector('[data-schedule-publish]');
+    const selectedCount = container.querySelector('#selected-count');
     const updateScheduleSelection = () => {
       const selected = scheduleChoices.filter(choice => choice.checked).length;
+      if (selectedCount) selectedCount.textContent = `· เลือก ${selected} คู่`;
       if (publish) {
         publish.disabled = selected === 0;
-        publish.textContent = selected ? `เผยแพร่รายการที่เลือก (${selected})` : 'เผยแพร่รายการที่เลือก';
+        const textNode = [...publish.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+        const nextText = selected ? `เผยแพร่ที่เลือก (${selected})` : 'เผยแพร่ที่เลือก';
+        if (textNode) textNode.textContent = nextText;
+        else publish.textContent = nextText;
       }
       if (selectAll) {
         selectAll.checked = scheduleChoices.length > 0 && selected === scheduleChoices.length;
@@ -221,6 +226,21 @@
       scheduleChoices.forEach(choice => { choice.checked = selectAll.checked; });
       updateScheduleSelection();
     });
+    const previewDialog = container.querySelector('#schedule-public-preview');
+    if (previewDialog) {
+      container.querySelectorAll('[data-schedule-preview-open]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (typeof previewDialog.showModal === 'function') previewDialog.showModal();
+          else previewDialog.setAttribute('open', '');
+        });
+      });
+      previewDialog.querySelectorAll('[data-schedule-preview-close]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (typeof previewDialog.close === 'function') previewDialog.close();
+          else previewDialog.removeAttribute('open');
+        });
+      });
+    }
     scheduleForm?.addEventListener('submit', event => {
       if (scheduleForm.dataset.submitting === 'true' || !scheduleChoices.some(choice => choice.checked)) {
         event.preventDefault();
@@ -439,11 +459,24 @@
     });
     root.addEventListener('submit', e => {
       const activeForm = e.target.closest?.('.workspace-filters');
-      if (activeForm) onFormSubmit(e, activeForm);
+      if (activeForm) { onFormSubmit(e, activeForm); return; }
+      const statusForm = e.target.closest?.('#schedule-status-form');
+      if (statusForm) {
+        e.preventDefault();
+        const url = new URL(statusForm.action, window.location.href);
+        const params = new URLSearchParams();
+        for (const [k, v] of new FormData(statusForm).entries()) params.append(k, String(v));
+        url.search = params.toString();
+        fetchWorkspacePage(url.toString(), url.pathname, true);
+      }
     });
     root.addEventListener('change', e => {
       const activeForm = e.target.closest?.('.workspace-filters');
-      if (activeForm) onFormChange(e, activeForm);
+      if (activeForm) { onFormChange(e, activeForm); return; }
+      const statusForm = e.target.closest?.('#schedule-status-form');
+      if (statusForm && e.target.name === 'schedule_state') {
+        statusForm.requestSubmit();
+      }
     });
   } else {
     root.querySelector('[data-dashboard-clear]')?.addEventListener('click', onClearClick);
