@@ -92,15 +92,15 @@ describe('Registration & Approval Statistics 2-Tabs (Issue #2)', () => {
     expect(allSnap.ages).toEqual([0, 2, 1]);
   });
 
-  test('AC04/AC09: approval tab uses latest transition timestamp and handles legacy missing timestamps (OQ1-OQ5)', () => {
+  test('AC04/AC09: approval tab requires team APPROVED + >=18 approved players and uses 18th player / team approval max timestamp', () => {
     const teams = [
       {
         id: 'FTM-10',
         status: 'APPROVED',
         province: 'กรุงเทพมหานคร',
         district: 'ดุสิต',
-        categories: 'U14',
-        submitted_categories: 'U14',
+        categories: 'U14,U18',
+        submitted_categories: 'U14,U18',
         cancelled_categories: '',
         created_at: '2026-10-10T05:00:00.000Z'
       },
@@ -115,13 +115,28 @@ describe('Registration & Approval Statistics 2-Tabs (Issue #2)', () => {
         created_at: '2026-10-05T05:00:00.000Z' // legacy team with no TEAM_STATUS_CHANGED audit
       }
     ];
+    // FTM-10 U14 has 19 approved players (18th on 2026-11-18, 19th on 2026-11-19); U18 has only 17 (excluded)
     const players = [
-      { id: 'P1', team_id: 'FTM-10', category: 'U14', doc_status: 'APPROVED' },
-      { id: 'P2', team_id: 'FTM-11', category: 'U16', doc_status: 'APPROVED' }
+      ...Array.from({ length: 19 }, (_, idx) => ({ id: `P14-${idx + 1}`, team_id: 'FTM-10', category: 'U14', doc_status: 'APPROVED' })),
+      ...Array.from({ length: 17 }, (_, idx) => ({ id: `P18-${idx + 1}`, team_id: 'FTM-10', category: 'U18', doc_status: 'APPROVED' })),
+      ...Array.from({ length: 18 }, (_, idx) => ({ id: `P16-${idx + 1}`, team_id: 'FTM-11', category: 'U16', doc_status: 'APPROVED' }))
     ];
     const audits = [
       { team_id: 'FTM-10', event_type: 'TEAM_STATUS_CHANGED', new_state: { status: 'APPROVED' }, created_at: '2026-11-15T05:00:00.000Z' },
-      { team_id: 'FTM-10', entity_id: 'P1', event_type: 'PLAYER_DOCUMENT_STATUS_CHANGED', new_state: { docStatus: 'APPROVED' }, created_at: '2026-11-19T05:00:00.000Z' }
+      ...Array.from({ length: 18 }, (_, idx) => ({
+        team_id: 'FTM-10',
+        entity_id: `P14-${idx + 1}`,
+        event_type: 'PLAYER_DOCUMENT_STATUS_CHANGED',
+        new_state: { docStatus: 'APPROVED' },
+        created_at: '2026-11-18T05:00:00.000Z'
+      })),
+      {
+        team_id: 'FTM-10',
+        entity_id: 'P14-19',
+        event_type: 'PLAYER_DOCUMENT_STATUS_CHANGED',
+        new_state: { docStatus: 'APPROVED' },
+        created_at: '2026-11-19T05:00:00.000Z'
+      }
     ] as any;
     const now = new Date('2026-11-20T03:00:00.000Z');
 
@@ -130,16 +145,25 @@ describe('Registration & Approval Statistics 2-Tabs (Issue #2)', () => {
     expect(allSnap.legacyMissingTimestampCount).toBe(1);
     expect(allSnap.definitionVersion).toBe(APPROVAL_DEFINITION_VERSION);
 
-    const rangeSnap = buildApprovalStatisticsForRange(
+    // 18th player completed on 2026-11-18 (not 19th on 2026-11-19)
+    const range18 = buildApprovalStatisticsForRange(
+      teams,
+      players,
+      audits,
+      now.toISOString(),
+      parseBangkokDateRange({ preset: 'custom', from: '2026-11-18', to: '2026-11-18' }, now)
+    );
+    expect(range18.ages).toEqual([1, 0, 0]);
+    expect(range18.trend).toEqual([{ date: '2026-11-18', total: 1, u14: 1, u16: 0, u18: 0 }]);
+
+    const range19 = buildApprovalStatisticsForRange(
       teams,
       players,
       audits,
       now.toISOString(),
       parseBangkokDateRange({ preset: 'custom', from: '2026-11-19', to: '2026-11-19' }, now)
     );
-    // FTM-10 U14 completed approval on 2026-11-19; legacy FTM-11 excluded from date-filtered range
-    expect(rangeSnap.ages).toEqual([1, 0, 0]);
-    expect(rangeSnap.trend).toEqual([{ date: '2026-11-19', total: 1, u14: 1, u16: 0, u18: 0 }]);
+    expect(range19.ages).toEqual([0, 0, 0]);
   });
 
   test('AC10: approval API enforces role guard (403 when unauthorized) and returns aggregate allowlist when authorized', async () => {
