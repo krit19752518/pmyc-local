@@ -4,9 +4,9 @@ namespace PMYC\Phase2;
 
 final class CompetitionDraft
 {
-    public static function validate(array $input, array $areas): array
+    public static function validate(array $input, array $areas, ?string $divisionCode=null): array
     {
-        $errors=[];
+        $errors=[];$women=$divisionCode==='U18_GIRL';
         $stage=$input['stage'] ?? null;
         if (!in_array($stage,[1,2,3,4,'1','2','3','4'],true)) $errors['stage']='กรุณาเลือก Stage 1–4';
         $stage=(int)(is_scalar($stage)?$stage:0);
@@ -21,7 +21,8 @@ final class CompetitionDraft
         ['province'=>$province,'district'=>$district,'zone'=>$zone]=$values;
         if ($zone!==null) $zone=$values['zone']=strtoupper($zone);
         if (in_array($stage,[1,2],true) && ($province===null || !isset($areas[$province]))) $errors['province']='กรุณาเลือกจังหวัดที่ถูกต้อง';
-        if ($stage===1 && ($district===null || !in_array($district,$areas[$province ?? ''] ?? [],true))) $errors['district']='อำเภอหรือเขตต้องอยู่ในจังหวัดที่เลือก';
+        if (!$women && $stage===1 && ($district===null || !in_array($district,$areas[$province ?? ''] ?? [],true))) $errors['district']='อำเภอหรือเขตต้องอยู่ในจังหวัดที่เลือก';
+        if($women&&($stage!==1||$district!==null))$errors['stage']='รอบแรกหญิงใช้ระดับจังหวัดเท่านั้น ไม่ต้องเลือกอำเภอ';
         if ($stage!==1 && $district!==null) $errors['district']='Stage นี้ไม่ใช้พื้นที่ระดับอำเภอ';
         if ($stage>=3 && $province!==null) $errors['province']='Stage นี้ไม่ใช้จังหวัดเป็นขอบเขต';
         if ($stage===3 && ($zone===null || !preg_match('/^[A-Za-z][A-Za-z0-9_-]{1,15}$/D',$zone))) $errors['zone']='กรุณาระบุรหัสโซนที่ถูกต้อง';

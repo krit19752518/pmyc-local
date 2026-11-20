@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace PMYC\Phase2;
+require_once __DIR__.'/WomenRegistrationAdapter.php';
 
 /** Persisted registration only. Never falls back to process memory. */
 final class RegistrationAdapter
@@ -20,10 +21,10 @@ final class RegistrationAdapter
         foreach($index as &$provinces){ksort($provinces);foreach($provinces as &$districts){$districts=array_keys($districts);sort($districts);}unset($districts);}unset($provinces);
         return $index;
     }
-    public function existingAreas(bool $demo,array $codes):array
+    public function existingAreas(bool $demo,array $codes,?string $seasonId=null):array
     {
         $s=$this->db->prepare('SELECT province,district,contact_district,gender,categories,cancelled_categories,is_deleted,is_test FROM football_registered_team WHERE is_test=CAST(? AS boolean) AND NOT COALESCE(is_deleted,false)');$s->execute([$demo?'true':'false']);
-        return self::areaIndex($s->fetchAll(),$demo,$codes);
+        $index=self::areaIndex($s->fetchAll(),$demo,$codes);if(in_array('U18_GIRL',$codes,true)&&(new WomenRegistrationAdapter($this->db))->ready())$index['U18_GIRL']=(new WomenRegistrationAdapter($this->db))->areas($demo,$seasonId);return $index;
     }
     public static function snapshot(array $team,array $players,array $officials,array $scope): ?array
     {
@@ -35,7 +36,9 @@ final class RegistrationAdapter
             || !in_array($category,self::categories($team['submitted_categories']),true)
             || in_array($category,self::categories($team['cancelled_categories']),true)) return null;
         $players=array_values(array_filter($players,fn($p)=>in_array($category,self::categories($p['category']),true)));
-        if (!$players || array_filter($players,fn($p)=>$p['doc_status']!=='APPROVED')) return null;
+        // Owner rule: APPROVED team, submitted/non-cancelled category and at least 18
+        // approved players in that category. Remaining players may still be pending.
+        if(count(array_filter($players,fn($p)=>($p['doc_status'] ?? '')==='APPROVED'))<18)return null;
         $officials=array_values(array_filter($officials,fn($p)=>in_array($category,self::categories($p['categories']),true)));
         return ['source_team_id'=>$team['id'],'name'=>$team['team_name'],
             'players'=>array_map(fn($p)=>array_intersect_key($p,array_flip(['id','name','jersey_no','position'])),$players),
@@ -44,6 +47,7 @@ final class RegistrationAdapter
     /** Summary uses identical eligibility/order without reading player names or official records. */
     public function candidates(array $scope,bool $lock=false,bool $summary=false): array
     {
+        if(($scope['division_code'] ?? '')==='U18_GIRL')return (new WomenRegistrationAdapter($this->db))->candidates($scope,$lock,$summary);
         if ((int)$scope['stage']!==1) throw new \DomainException('Stage นี้ต้องรับทีมจากผลผ่านเข้ารอบ ไม่สามารถนำเข้าจากใบสมัครโดยตรง');
         $columns=$summary?[]:$this->db->query("SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='football_official' AND column_name IN ('position','role')")->fetchAll(\PDO::FETCH_COLUMN);
         $officialPosition=in_array('position',$columns,true)?'position':(in_array('role',$columns,true)?'role':null);

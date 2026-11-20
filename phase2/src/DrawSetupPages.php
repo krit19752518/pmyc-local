@@ -78,7 +78,7 @@ final class DrawSetupPages
         if(!$event)return ['ok'=>true,'divisions'=>[],'areas'=>(object)[],'format'=>'','data_mode'=>''];
         $repo=new CompetitionRepository($db);$divisions=$repo->divisions($event['id']);$super=$actor['role']==='SUPER_ADMIN';
         if(!$super)$divisions=array_values(array_filter($divisions,fn($d)=>in_array($d['id'],array_column($visible,'division_id'),true)));
-        $registered=$super?(new RegistrationAdapter($db))->existingAreas($event['is_test'],array_column($divisions,'code')):[];$areas=[];
+        $registered=$super?(new RegistrationAdapter($db))->existingAreas($event['is_test'],array_column($divisions,'code'),$event['season_id']):[];$areas=[];
         foreach($divisions as $d)$areas[$d['id']]=['1'=>$registered[$d['code']] ?? [],'2'=>[]];
         foreach($repo->listVisible($actor,$event['id']) as $scope){
             if(!isset($areas[$scope['division_id']]))continue;$key=(string)$scope['stage'];if(!in_array($key,['1','2'],true))continue;
@@ -89,12 +89,14 @@ final class DrawSetupPages
             }else $areas[$scope['division_id']]['2'][$scope['province']]=[];
         }
         foreach($areas as &$stages)foreach($stages as &$provinces)$provinces=(object)$provinces;unset($stages,$provinces);
-        return ['ok'=>true,'divisions'=>array_map(fn($d)=>['id'=>$d['id'],'label'=>EventDraft::DIVISIONS[$d['code']]],$divisions),'areas'=>(object)$areas,'format'=>in_array($event['template_version_id'],DrawEngine::TEMPLATES,true)?'แพ้คัดออก (Knockout)':'พบกันหมด 1 เลก','data_mode'=>$event['is_test']?'ข้อมูล Demo':'ข้อมูลจริง'];
+        return ['ok'=>true,'divisions'=>array_map(fn($d)=>['id'=>$d['id'],'code'=>$d['code'],'label'=>EventDraft::DIVISIONS[$d['code']]],$divisions),'areas'=>(object)$areas,'format'=>in_array($event['template_version_id'],DrawEngine::TEMPLATES,true)?'แพ้คัดออก (Knockout)':'พบกันหมด 1 เลก','data_mode'=>$event['is_test']?'ข้อมูล Demo':'ข้อมูลจริง'];
     }
     public static function preview(\PDO $db,?array $event,array $values,array $actor):array
     {
         if(!$event)throw new \InvalidArgumentException('กรุณาเลือกรายการแข่งขัน / ฤดูกาล');
-        $result=CompetitionDraft::validate($values,AreaDirectory::districts());
+        $divisionCode=array_column((new CompetitionRepository($db))->divisions($event['id']),'code','id')[(is_string($values['division_id'] ?? null)?$values['division_id']:'')] ?? null;
+        $female=$divisionCode==='U18_GIRL';
+        $result=CompetitionDraft::validate($values,AreaDirectory::districts(),$divisionCode);
         if($result['errors'])throw new \InvalidArgumentException(implode(' · ',$result['errors']));
         $s=$result['draft'];if(!in_array($s['stage'],[1,2],true))throw new \InvalidArgumentException('เปิดใช้เฉพาะ Stage 1–2');
         $repo=new CompetitionRepository($db);if(!in_array($s['division_id'],array_column($repo->divisions($event['id']),'id'),true))throw new \InvalidArgumentException('รุ่นต้องอยู่ในรายการแข่งขันที่เลือก');
@@ -106,15 +108,15 @@ final class DrawSetupPages
         if($draw||!$canDraw){$teams=$roster['teams'] ?? [];$fingerprint=$roster['fingerprint'] ?? hash('sha256','[]');}
         elseif($s['stage']===1){
             $meta=self::metadata($db,$event,$actor,$repo->listVisible($actor,$event['id']));$index=(array)$meta['areas'];$provinces=(array)($index[$s['division_id']]['1'] ?? []);
-            if(!$scope&&!in_array($s['district'],$provinces[$s['province']] ?? [],true))throw new \InvalidArgumentException('พื้นที่นี้ยังไม่มีข้อมูลของรุ่นและประเภทที่เลือก');
+            if(!$scope&&($female?!array_key_exists($s['province'],$provinces):!in_array($s['district'],$provinces[$s['province']] ?? [],true)))throw new \InvalidArgumentException('พื้นที่นี้ยังไม่มีข้อมูลของรุ่นและประเภทที่เลือก');
             $code=array_column($repo->divisions($event['id']),'code','id')[$s['division_id']];
             $teams=(new RegistrationAdapter($db))->candidates([...$s,'division_code'=>$code,'is_test'=>$event['is_test']]);$fingerprint=hash('sha256',json_encode($teams,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR));
         }else{
             $teams=$roster['teams'] ?? [];$fingerprint=$roster['fingerprint'] ?? hash('sha256','[]');
             if(!$scope){$q=$db->prepare("SELECT EXISTS(SELECT 1 FROM p2_competition WHERE event_id=? AND division_id=? AND stage=1 AND province=? AND status<>'ARCHIVED')");$q->execute([$event['id'],$s['division_id'],$s['province']]);if(!$q->fetchColumn())throw new \InvalidArgumentException('ยังไม่มีการแข่งขันอำเภอต้นทางในจังหวัดนี้');}
         }
-        $supported=in_array($event['template_version_id'],DrawEngine::TEMPLATES,true);$base=$scope?'/phase2demo/competitions/'.$scope['id']:null;
-        return ['ok'=>true,'teams'=>array_map(fn($t)=>['name'=>$t['name']],$teams),'structure'=>$supported?DrawEngine::structure(count($teams)):null,'eligibility_hash'=>$fingerprint,'competition_id'=>$scope['id'] ?? null,'historical'=>$draw!==null||!$canDraw,'can_save'=>$actor['role']==='SUPER_ADMIN'&&$canDraw,'can_start'=>$canDraw&&$supported&&count($teams)>0&&($s['stage']===1||!empty($roster['locked'])),'ceremony_url'=>$draw?$base.'/draw':null,'start_url'=>$base?$base.'/draw/setup':null,'advancement_url'=>$s['stage']===2&&$base&&$canDraw?$base.'/advancement':null,'notice'=>!$supported?'รูปแบบนี้ยังไม่รองรับการจับสลากแพ้คัดออก':($draw?'ใช้รายชื่อที่บันทึกไว้กับผลจับสลากเดิม':(!$canDraw?'แสดงรายชื่อที่บันทึกไว้ · ไม่มีสิทธิ์เริ่มจับสลากหรือรายการปิดแล้ว':($s['stage']===2?'Stage 2 ใช้ทีมผ่านเข้ารอบจากการแข่งขันอำเภอ':'ทีมและนักกีฬาทุกคนในรุ่นได้รับอนุมัติครบ · สูงสุด 8 ทีมแรกตามเวลาสมัคร')))];
+        $supported=!$female&&in_array($event['template_version_id'],DrawEngine::TEMPLATES,true);$base=$scope?'/phase2demo/competitions/'.$scope['id']:null;
+        return ['ok'=>true,'teams'=>array_map(fn($t)=>['name'=>$t['name']],$teams),'structure'=>$supported?DrawEngine::structure(count($teams)):null,'eligibility_hash'=>$fingerprint,'competition_id'=>$scope['id'] ?? null,'historical'=>$draw!==null||!$canDraw,'can_save'=>$actor['role']==='SUPER_ADMIN'&&$canDraw,'can_start'=>$canDraw&&$supported&&count($teams)>0&&($s['stage']===1||!empty($roster['locked'])),'ceremony_url'=>$draw?$base.'/draw':null,'start_url'=>$base?$base.'/draw/setup':null,'advancement_url'=>$s['stage']===2&&$base&&$canDraw?$base.'/advancement':null,'notice'=>!$supported?($female?'รอบแรกหญิงระดับจังหวัด · รอสรุปจำนวนทีมและรูปแบบจับสลากก่อนสร้างคู่จริง':'รูปแบบนี้ยังไม่รองรับการจับสลากแพ้คัดออก'):($draw?'ใช้รายชื่อที่บันทึกไว้กับผลจับสลากเดิม':(!$canDraw?'แสดงรายชื่อที่บันทึกไว้ · ไม่มีสิทธิ์เริ่มจับสลากหรือรายการปิดแล้ว':($s['stage']===2?'Stage 2 ใช้ทีมผ่านเข้ารอบจากการแข่งขันอำเภอ':'ทีมและรุ่นอนุมัติแล้ว · นักกีฬาในรุ่นอนุมัติอย่างน้อย 18 คน · สูงสุด 8 ทีมแรกตามเวลาสมัคร')))];
     }
     private static function form(array $events,array $meta,array $s,?array $preview,array $context,bool $super):string
     {

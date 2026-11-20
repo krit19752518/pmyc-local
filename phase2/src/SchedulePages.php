@@ -6,7 +6,7 @@ namespace PMYC\Phase2;
 final class SchedulePages
 {
     public const PATH='/phase2demo/workspace/pending-schedule';
-    private const FILTERS=['all','waiting','ready','published','changed','cancelled'];
+    private const FILTERS=['all','waiting','scheduled','postponed','cancelled','ready','published','changed'];
 
     public static function render(string $method,array $query,array $input,array $context,?\PDO $db=null):array
     {
@@ -58,37 +58,44 @@ final class SchedulePages
         $filterForm='<form class="card schedule-status-filter" method="get" action="'.self::PATH.'">';
         foreach($filters as $key=>$value)if($value!=='')$filterForm.='<input type="hidden" name="'.$e($key).'" value="'.$e($value).'">';
         $filterForm.='<label for="schedule-state">สถานะตาราง</label><select class="inline-filter" id="schedule-state" name="schedule_state">';
-        foreach(['all'=>'ทุกสถานะ','waiting'=>'รอจัดตาราง','ready'=>'พร้อมเผยแพร่','published'=>'จัดตารางและเผยแพร่แล้ว','changed'=>'เปลี่ยนแปลงการแข่งขัน','cancelled'=>'ยกเลิกการแข่งขัน'] as $key=>$label)
-            $filterForm.='<option value="'.$e($key).'"'.($filter===$key?' selected':'').'>'.$e($label).'</option>';
+        $filterForm.='<option value="all"'.($filter==='all'?' selected':'').'>ทุกสถานะ</option>';
+        foreach(['สถานะตารางการแข่งขัน'=>['waiting'=>'รอจัดตาราง','scheduled'=>'จัดตารางแล้ว','postponed'=>'เลื่อนการแข่งขัน','cancelled'=>'ยกเลิกการแข่งขัน'],'การเผยแพร่'=>['ready'=>'ยังไม่เผยแพร่','published'=>'เผยแพร่แล้ว','changed'=>'เปลี่ยนแปลงการแข่งขัน']] as $group=>$options){
+            $filterForm.='<optgroup label="'.$e($group).'">';
+            foreach($options as $key=>$label)$filterForm.='<option value="'.$e($key).'"'.($filter===$key?' selected':'').'>'.$e($label).'</option>';
+            $filterForm.='</optgroup>';
+        }
         $filterForm.='</select><button class="btn compact" type="submit">กรอง</button></form>';$html.=$filterForm;
         $status=$draw?$draws->ceremonyStatus($scope['event_id'],$draw['id']):null;
-        $locked=$status==='CONFIRMED_LOCKED'||($status===null&&$draw&&$draw['published_at']);
+        $locked=in_array($status,['CONFIRMED_LOCKED','ACTIVE'],true)||($status===null&&$draw&&$draw['published_at']);
         if(!$draw){$html.='<div class="notice warning" role="status"><p>ยังไม่มีผลจับสลาก จึงยังไม่มีคู่แข่งขันสำหรับจัดตาราง</p><a href="'. $e(WorkspaceView::url('ceremony',$filters)).'">ไปที่พิธีจับสลาก</a></div>';return $html;}
-        if(!$locked)$html.='<div class="notice warning" role="status"><p>ยืนยันและล็อกผลจับสลากทั้งชุดก่อน แล้วจึงกำหนดวัน เวลา และสนามได้</p><a href="'. $e(WorkspaceView::url('result',$filters)).'">ไปยืนยันผลการจับสลาก</a></div>';
+        if(!$locked)$html.='<div class="notice warning" role="status"><p>เปิดทีมในพิธีจับสลากให้ครบ แล้วจึงกำหนดวัน เวลา และสนามได้</p><a href="'. $e(WorkspaceView::url('result',$filters)).'">ไปเปิดผลการจับสลาก</a></div>';
         $repo=new MatchRepository($db);$rows=$repo->list($scope['id']);$names=array_column($draw['slots'],'name','source_team_id');$can=CompetitionPolicy::can($actor,$scope,(new CompetitionRepository($db))->assignment($scope['id'],$actor),'schedule');
         $decorated=[];
         foreach($rows as $match){$sideA=json_decode($match['side_a'],true,512,JSON_THROW_ON_ERROR);$sideB=json_decode($match['side_b'],true,512,JSON_THROW_ON_ERROR);$resolved=$repo->resolved($match);
             $publication=$repo->schedulePublication($match);$same=$publication&&$publication['snapshot']?self::sameSchedule($match,$publication['snapshot']):false;
             [$key,$label,$detail]=self::state($match,$publication,$same);
-            if($filter!=='all'&&$filter!==$key)continue;
+            [$schedulingKey,$schedulingLabel]=self::scheduling($match);
+            if($filter!=='all'&&$filter!==(in_array($filter,['waiting','scheduled','postponed','cancelled'],true)?$schedulingKey:$key))continue;
             $teamA=$resolved['a']?($names[$resolved['a']] ?? 'ทีมที่ผ่านเข้ารอบ'):self::sideLabel($sideA,$names);
             $teamB=$resolved['b']?($names[$resolved['b']] ?? 'ทีมที่ผ่านเข้ารอบ'):self::sideLabel($sideB,$names);
             $match['schedule_key']=$key;$match['schedule_label']=$label;$match['schedule_detail']=$detail;$match['home']=$teamA;$match['away']=$teamB;
+            $match['scheduling_key']=$schedulingKey;$match['scheduling_label']=$schedulingLabel;
             $match['publication']=$publication;$decorated[]=$match;
         }
         $base='/phase2demo/competitions/'.$scope['id'].'/matches/';
         $html.='<section class="card"><div class="card-head"><div><h2>รายการแข่งขัน · '.$e(EventDraft::DIVISIONS[$scope['division_code']] ?? $scope['division_code']).'</h2><p>'.$e($scope['event_name']).' · '.$e(implode(' · ',array_filter([$scope['district'],$scope['province']]))).' · '.count($rows).' คู่</p></div></div>';
         $publishable=array_values(array_filter($decorated,fn($m)=>$m['schedule_key']==='ready'));
         if($can&&$locked&&$publishable){$html.='<form id="schedule-publish-form" method="post" action="'.$e(self::url($filters,$filter)).'"><input type="hidden" name="_csrf" value="'.$e($csrf).'"><input type="hidden" name="operation" value="publish_selected"></form><div class="selection-bar"><label><input type="checkbox" data-schedule-select-all> เลือกคู่ที่พร้อมเผยแพร่</label><span>เผยแพร่เฉพาะคู่ที่เลือก</span><button class="btn primary" type="submit" form="schedule-publish-form" data-schedule-publish disabled>เผยแพร่รายการที่เลือก</button></div>';}
-        $html.='<div class="table-wrap"><table class="schedule-table"><thead><tr><th></th><th>คู่ / รอบ</th><th>ทีมแข่งขัน</th><th>วัน เวลา และสนาม</th><th>สถานะตาราง</th><th></th></tr></thead><tbody>';
+        $html.='<div class="table-wrap"><table class="schedule-table"><thead><tr><th><span class="sr-only">เลือกคู่แข่งขัน</span></th><th>คู่ / รอบ</th><th>ทีมแข่งขัน</th><th>วัน เวลา และสนาม</th><th>สถานะตาราง</th><th>การเผยแพร่</th><th>การดำเนินการ</th></tr></thead><tbody>';
         foreach($decorated as $match){$detail=MatchDetailView::url($base.$match['id'],$filters);$scheduled=$match['scheduled_start']?self::time($match['scheduled_start']).' – '.self::time($match['scheduled_end']).' น.':'ยังไม่กำหนดวัน เวลา และสนาม';
             $html.='<tr><td>'.($can&&$locked&&$match['schedule_key']==='ready'?'<input form="schedule-publish-form" type="hidden" name="versions['.$e($match['id']).']" value="'.$e((string)$match['version']).'"><input form="schedule-publish-form" type="hidden" name="request_ids['.$e($match['id']).']" value="'.$e(EventRepository::uuid()).'"><input form="schedule-publish-form" type="checkbox" name="match_ids[]" value="'.$e($match['id']).'" data-schedule-select aria-label="เลือก M'.$e($match['number']).'">':'').'</td><td><strong>M'.str_pad((string)$match['number'],2,'0',STR_PAD_LEFT).'</strong><small>รอบ '.$e($match['round']).'</small></td>'
                 .'<td><div class="schedule-teams"><span>'.$e($match['home']).'</span><small>VS</small><span>'.$e($match['away']).'</span></div></td><td>'.$e($scheduled).'<small>'. $e($match['venue_name'] ?? 'ยังไม่กำหนดสนาม').'</small></td>'
+                .'<td><span class="badge '.($match['scheduling_key']==='cancelled'?'cancelled':($match['scheduling_key']==='postponed'?'changed':'')).'">'.$e($match['scheduling_label']).'</span></td>'
                 .'<td><span class="badge '.self::badge($match['schedule_key']).'">'.$e($match['schedule_label']).'</span>'.($match['schedule_detail']!==''?'<small>'.$e($match['schedule_detail']).'</small>':'').'</td><td><a class="btn compact" href="'.$e($detail).'">รายละเอียด</a>';
-            if($can&&$locked&&$match['schedule_key']==='changed')$html.='<form method="post" action="'.$e(self::url($filters,$filter)).'" class="schedule-republish"><input type="hidden" name="_csrf" value="'.$e($csrf).'"><input type="hidden" name="operation" value="republish_one"><input type="hidden" name="match_ids[]" value="'.$e($match['id']).'"><input type="hidden" name="versions['.$e($match['id']).']" value="'.$e($match['version']).'"><input type="hidden" name="request_ids['.$e($match['id']).']" value="'.EventRepository::uuid().'"><button class="btn compact green" type="submit">เผยแพร่กำหนดใหม่</button></form>';
+            if($can&&$locked&&$match['schedule_key']==='changed'&&$match['schedule_detail']==='รอเผยแพร่กำหนดใหม่'&&$match['scheduling_key']==='scheduled')$html.='<form method="post" action="'.$e(self::url($filters,$filter)).'" class="schedule-republish"><input type="hidden" name="_csrf" value="'.$e($csrf).'"><input type="hidden" name="operation" value="republish_one"><input type="hidden" name="match_ids[]" value="'.$e($match['id']).'"><input type="hidden" name="versions['.$e($match['id']).']" value="'.$e($match['version']).'"><input type="hidden" name="request_ids['.$e($match['id']).']" value="'.EventRepository::uuid().'"><button class="btn compact green" type="submit">เผยแพร่กำหนดใหม่</button></form>';
             $html.='</td></tr>';
         }
-        if(!$decorated)$html.='<tr><td colspan="6" class="empty">ไม่พบคู่แข่งขันในสถานะที่เลือก</td></tr>';
+        if(!$decorated)$html.='<tr><td colspan="7" class="empty">ไม่พบคู่แข่งขันในสถานะที่เลือก</td></tr>';
         $html.='</tbody></table></div><div class="table-footer"><span>แสดง '.count($decorated).' จาก '.count($rows).' คู่</span><span>กำหนดการฉบับร่างจะไม่แสดงต่อสาธารณะ</span></div></section>';
         return $html;
     }
@@ -98,14 +105,24 @@ final class SchedulePages
         return self::state($match,$publication,$publication&&$publication['snapshot']?self::sameSchedule($match,$publication['snapshot']):false);
     }
 
+    /** Scheduling and publication are independent; result states never become scheduling badges. */
+    public static function scheduling(array $match):array
+    {
+        if($match['state']==='CANCELLED')return ['cancelled','ยกเลิกการแข่งขัน'];
+        if($match['state']==='POSTPONED')return ['postponed','เลื่อนการแข่งขัน'];
+        if(!$match['scheduled_start']||!$match['scheduled_end']||!$match['venue_id'])return ['waiting','รอจัดตาราง'];
+        return ['scheduled','จัดตารางแล้ว'];
+    }
+
     private static function state(array $match,?array $publication,bool $same):array
     {
-        if($match['state']==='CANCELLED')return ['cancelled','ยกเลิกการแข่งขัน',''];
-        if(!$match['scheduled_start']||!$match['scheduled_end']||!$match['venue_id'])return ['waiting','รอจัดตาราง',''];
-        if(!$publication)return ['ready','พร้อมเผยแพร่',''];
+        if(!$publication){
+            if(self::scheduling($match)[0]==='scheduled')return ['ready','ยังไม่เผยแพร่','พร้อมเผยแพร่'];
+            return ['waiting','ยังไม่เผยแพร่',''];
+        }
         if(!$same)return ['changed','เปลี่ยนแปลงการแข่งขัน','รอเผยแพร่กำหนดใหม่'];
         if(in_array($publication['operation'],['schedule_republish','legacy_draw_publication'],true))return ['changed','เปลี่ยนแปลงการแข่งขัน','เผยแพร่กำหนดใหม่แล้ว'];
-        return ['published','จัดตารางและเผยแพร่แล้ว',''];
+        return ['published','เผยแพร่แล้ว',''];
     }
 
     private static function sameSchedule(array $current,array $published):bool

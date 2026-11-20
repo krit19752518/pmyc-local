@@ -16,9 +16,9 @@ final class AdvancementRepository
         $sources=$this->sources($scope);$results=new ResultRepository($this->db);$draws=new DrawRepository($this->db);$teams=[];$origins=[];$pending=[];
         foreach($sources as $source){
             $qualified=$results->qualifiers($source['id']);$draw=$draws->current($source['id']);
-            if(!$qualified||!$draw||!$draw['published_at']){$pending[]=$source['district'];continue;}
+            if(!$qualified||!$draw){$pending[]=$source['district'];continue;}
             $s=$this->db->prepare('SELECT teams FROM p2_roster_revision WHERE id=?');$s->execute([$draw['roster_revision_id']]);$roster=array_column(json_decode($s->fetchColumn(),true,512,JSON_THROW_ON_ERROR),null,'source_team_id');
-            foreach($qualified as $q){$id=$q['source_team_id'];if(isset($teams[$id]))throw new \DomainException('ทีมเดียวผ่านจากหลายอำเภอ กรุณาตรวจสอบข้อมูลต้นทาง');if(!isset($roster[$id]))throw new \DomainException('ไม่พบทีมผ่านเข้ารอบในรายชื่อที่ล็อก');$teams[$id]=$roster[$id];$origins[]=['source_competition_id'=>$source['id'],'source_draw_id'=>$draw['id'],'qualification_revision_id'=>$q['origin_kind']==='QUALIFICATION'?$q['origin_id']:null,'source_team_id'=>$id,'rank'=>$q['rank']];}
+            foreach($qualified as $q){$id=$q['source_team_id'];if(isset($teams[$id]))throw new \DomainException('ทีมเดียวผ่านจากหลายอำเภอ กรุณาตรวจสอบข้อมูลต้นทาง');if(!isset($roster[$id]))throw new \DomainException('ไม่พบทีมผ่านเข้ารอบในรายชื่อที่ล็อก');$teams[$id]=$roster[$id]+['origin_rank'=>(int)$q['rank'],'origin_district'=>$source['district']];$origins[]=['source_competition_id'=>$source['id'],'source_draw_id'=>$draw['id'],'qualification_revision_id'=>$q['origin_kind']==='QUALIFICATION'?$q['origin_id']:null,'source_team_id'=>$id,'rank'=>$q['rank']];}
         }
         ksort($teams);usort($origins,fn($a,$b)=>strcmp($a['source_competition_id'].$a['source_team_id'],$b['source_competition_id'].$b['source_team_id']));
         return ['teams'=>array_values($teams),'origins'=>$origins,'pending'=>$pending,'source_ids'=>array_column($sources,'id')];

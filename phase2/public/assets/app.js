@@ -59,18 +59,21 @@
     const save = form.querySelector('[data-setup-save]');
     let areas = {};
     try { const parsed = JSON.parse(form.dataset.existingAreas || '{}'); if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) areas = parsed; } catch { /* Fail closed; no static area fallback. */ }
+    const female = () => division.selectedOptions?.[0]?.dataset.code === 'U18_GIRL';
+    const districtScope = () => stage.value === '1' && !female();
     const current = () => areas[division.value]?.[stage.value] || {};
-    const updateSave = () => { save.disabled = !division.value || !province.value || (stage.value === '1' && !district.value) || !['1','2'].includes(stage.value); };
+    const updateSave = () => { save.disabled = !division.value || !province.value || (districtScope() && !district.value) || !['1','2'].includes(stage.value); };
     const updateDistrict = () => {
       const selected = district.value;
       const names = current()[province.value] || [];
-      district.replaceChildren(new Option(stage.value === '2' ? 'Stage 2 ใช้ระดับจังหวัด' : (names.length ? 'เลือกอำเภอ / เขต' : 'ไม่มีอำเภอที่มีข้อมูล'), ''), ...names.map(name => new Option(name,name)));
-      district.disabled = stage.value !== '1' || !names.length;
-      district.required = stage.value === '1';
-      if (stage.value === '1' && names.includes(selected)) district.value = selected;
+      district.replaceChildren(new Option((stage.value === '2' || female()) ? 'ใช้ระดับจังหวัด ไม่ต้องเลือกอำเภอ' : (names.length ? 'เลือกอำเภอ / เขต' : 'ไม่มีอำเภอที่มีข้อมูล'), ''), ...names.map(name => new Option(name,name)));
+      district.disabled = !districtScope() || !names.length;
+      district.required = districtScope(); if(!districtScope())district.value='';
+      if (districtScope() && names.includes(selected)) district.value = selected;
       updateSave();
     };
     const update = () => {
+      if(female()){stage.value='1';} stage.querySelectorAll('option').forEach(o=>{if(o.value==='2')o.disabled=female();if(o.value==='1')o.textContent=female()?'รอบแรกหญิง · ระดับจังหวัด':'Stage 1 อำเภอ';});
       const selected = province.value;
       const names = Object.keys(current());
       province.replaceChildren(new Option(!division.value ? 'เลือกรุ่นอายุก่อน' : (names.length ? 'เลือกจังหวัด' : 'ไม่มีจังหวัดที่มีข้อมูล'), ''), ...names.map(name => new Option(name,name)));

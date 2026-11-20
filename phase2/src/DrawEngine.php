@@ -5,6 +5,7 @@ namespace PMYC\Phase2;
 final class DrawEngine
 {
     public const ALGORITHM='fisher-yates-random-int-knockout-v2';
+    public const STAGE2_ALGORITHM='rank-district-matching-random-int-v1';
     public const TEMPLATES=['pmyc-four-stage-v1','knockout-v1'];
     /** The setup preview and committed bracket share the same fixed slot rules. */
     public static function structure(int $n):array
@@ -23,6 +24,35 @@ final class DrawEngine
         $slots=array_map(fn($t)=>['source_team_id'=>$t['source_team_id'],'name'=>$t['name']],array_values($teams));
         for ($i=count($slots)-1;$i>0;$i--) { $j=random_int(0,$i);[$slots[$i],$slots[$j]]=[$slots[$j],$slots[$i]]; }
         foreach ($slots as $i=>&$slot) $slot['slot']='A'.($i+1);unset($slot);
+        return ['slots'=>$slots,...self::fixtures($slots)];
+    }
+    /** Constrain every fixed team-v-team opening pair; winner feeders keep the bracket formula. */
+    public static function generateStage2(array $teams):array
+    {
+        $prototype=self::generate($teams);$n=count($teams);$left=[];$right=[];
+        foreach($teams as $team){
+            if(!in_array($team['origin_rank'] ?? null,[1,2],true)||empty($team['origin_district']))throw new \DomainException('ต้องมีอันดับและอำเภอต้นทางครบก่อนจับสลากระดับจังหวัด');
+            if($team['origin_rank']===1)$left[]=$team;else $right[]=$team;
+        }
+        $shuffle=static function(array $items):array{for($i=count($items)-1;$i>0;$i--){$j=random_int(0,$i);[$items[$i],$items[$j]]=[$items[$j],$items[$i]];}return $items;};
+        $left=$shuffle($left);$right=$shuffle($right);$matched=[];
+        $augment=function(int $a,array &$seen)use(&$augment,&$matched,$left,$right):bool{
+            foreach($right as $b=>$team){
+                if(isset($seen[$b])||$left[$a]['origin_district']===$team['origin_district'])continue;
+                $seen[$b]=true;
+                if(!isset($matched[$b])||$augment($matched[$b],$seen)){$matched[$b]=$a;return true;}
+            }
+            return false;
+        };
+        foreach($left as $a=>$_){$seen=[];$augment($a,$seen);}
+        $slotPairs=[];
+        foreach($prototype['fixtures'] as $fixture)if($fixture['side_a']['type']==='team'&&$fixture['side_b']['type']==='team')$slotPairs[]=[$fixture['side_a']['slot'],$fixture['side_b']['slot']];
+        if(count($matched)<count($slotPairs))throw new \DomainException('ไม่สามารถจัดคู่เริ่มต้นอันดับ 1 พบอันดับ 2 ต่างอำเภอได้ กรุณาตรวจทีมผ่านเข้ารอบ');
+        $pairs=[];foreach($matched as $b=>$a)$pairs[]=[$left[$a],$right[$b]];$pairs=$shuffle($pairs);
+        $assigned=[];$used=[];
+        foreach($slotPairs as $i=>$slots){$pair=$shuffle($pairs[$i]);foreach($slots as $j=>$slot){$assigned[$slot]=$pair[$j];$used[$pair[$j]['source_team_id']]=true;}}
+        $remaining=$shuffle(array_values(array_filter($teams,fn($t)=>!isset($used[$t['source_team_id']]))));$slots=[];
+        for($i=1;$i<=$n;$i++){$slot='A'.$i;$team=$assigned[$slot] ?? array_pop($remaining);$slots[]=['source_team_id'=>$team['source_team_id'],'name'=>$team['name'],'slot'=>$slot];}
         return ['slots'=>$slots,...self::fixtures($slots)];
     }
     /** Balanced preliminary round; byes are advancements, never artificial matches/scores. */

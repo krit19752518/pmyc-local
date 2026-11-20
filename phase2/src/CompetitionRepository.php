@@ -4,7 +4,7 @@ namespace PMYC\Phase2;
 
 final class CompetitionRepository
 {
-    private const SELECT = 'SELECT c.*,e.name AS event_name,e.status AS event_status,e.is_test,e.template_version_id,d.code AS division_code,s.label AS season FROM p2_competition c JOIN p2_event e ON e.id=c.event_id JOIN p2_event_division d ON d.id=c.division_id AND d.event_id=c.event_id JOIN p2_season s ON s.id=e.season_id';
+    private const SELECT = 'SELECT c.*,e.name AS event_name,e.status AS event_status,e.is_test,e.template_version_id,d.code AS division_code,s.id AS season_id,s.label AS season FROM p2_competition c JOIN p2_event e ON e.id=c.event_id JOIN p2_event_division d ON d.id=c.division_id AND d.event_id=c.event_id JOIN p2_season s ON s.id=e.season_id';
     public function __construct(private \PDO $db) {}
 
     public function ready(): bool { return $this->db->query("SELECT to_regclass('p2_competition') IS NOT NULL")->fetchColumn()===true; }
@@ -17,7 +17,8 @@ final class CompetitionRepository
     public function create(string $eventId, array $input, array $actor, string $requestId): array
     {
         $this->super($actor);
-        $result=CompetitionDraft::validate($input,AreaDirectory::districts());
+         $divisionCode=EventRepository::validUuid($input['division_id'] ?? null)?($this->one('SELECT code FROM p2_event_division WHERE event_id=? AND id=?',[$eventId,$input['division_id']])['code'] ?? null):null;
+        $result=CompetitionDraft::validate($input,AreaDirectory::districts(),$divisionCode);
         if ($result['errors']) throw new \InvalidArgumentException(implode(' · ',$result['errors']));
         if (!EventRepository::validUuid($eventId) || !EventRepository::validUuid($requestId)) throw new \InvalidArgumentException('รหัสคำขอไม่ถูกต้อง');
         $draft=$result['draft'];
@@ -59,7 +60,7 @@ final class CompetitionRepository
 
     private function visible(array $actor, ?string $eventId, bool $dashboard): array
     {
-        $sql=$dashboard?str_replace('s.label AS season','s.id AS season_id,s.label AS season',self::SELECT):self::SELECT;
+        $sql=self::SELECT;
         $values=[];$where=[];
         if (($actor['role'] ?? null)!=='SUPER_ADMIN') {
             $sql.=' JOIN p2_competition_assignment a ON a.competition_id=c.id';

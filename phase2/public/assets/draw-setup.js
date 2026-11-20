@@ -10,7 +10,8 @@
   let metadata = initial.metadata, preview = initial.preview, epoch = 0, busy = false, saveKey = null, startKey = null, startNonce = null;
   let savedTicket = preview?.setup_request_id || null;
   const values = () => Object.fromEntries(Object.entries(fields).map(([name, field]) => [name, field.value]));
-  const complete = () => fields.event_id.value && fields.division_id.value && fields.province.value && (fields.stage.value === '2' || fields.district.value);
+  const female = () => metadata.divisions?.some(d=>d.id===fields.division_id.value&&d.code==='U18_GIRL');
+  const complete = () => fields.event_id.value && fields.division_id.value && fields.province.value && (female() || fields.stage.value === '2' || fields.district.value);
   const options = (field, items, placeholder, selected = '') => {
     field.replaceChildren(new Option(placeholder, ''), ...items.map(([value, label]) => new Option(label, value)));
     field.value = items.some(([value]) => value === String(selected)) ? String(selected) : '';
@@ -20,8 +21,8 @@
   const districtOptions = (selected = '') => {
     const names = areas()[fields.province.value] || [];
     options(fields.district, names.map(name => [name,name]), fields.stage.value === '2' ? 'Stage 2 ใช้ระดับจังหวัด' : 'เลือกเขต/อำเภอ', selected);
-    fields.district.required = fields.stage.value === '1';
-    if (fields.stage.value === '2') fields.district.disabled = true;
+    fields.district.required = fields.stage.value === '1' && !female();
+    if (fields.stage.value === '2' || female()){fields.district.disabled = true;fields.district.value='';}
   };
   const provinceOptions = (province = '', district = '') => {
     options(fields.province, Object.keys(areas()).map(name => [name,name]), 'เลือกจังหวัด', province);
@@ -95,7 +96,7 @@
       options(fields.division_id, metadata.divisions.map(d => [d.id,d.label]), 'เลือกรุ่นอายุ'); render();
     } catch (error) { if (ticket === epoch) notice.textContent = error.message; }
   });
-  fields.division_id.addEventListener('change', () => { provinceOptions(); invalidateSaved(); return loadPreview(); });
+  fields.division_id.addEventListener('change', () => {if(female())fields.stage.value='1'; fields.stage.querySelectorAll('option').forEach(o=>{if(o.value==='2')o.disabled=female();if(o.value==='1')o.textContent=female()?'รอบแรกหญิง ระดับจังหวัด':'Stage 1 ระดับอำเภอ';}); provinceOptions(); invalidateSaved(); return loadPreview(); });
   fields.stage.addEventListener('change', () => { provinceOptions(); invalidateSaved(); return loadPreview(); });
   fields.province.addEventListener('change', () => { districtOptions(); invalidateSaved(); return loadPreview(); });
   fields.district.addEventListener('change', () => { invalidateSaved(); return loadPreview(); });
