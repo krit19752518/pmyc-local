@@ -137,7 +137,7 @@ final class MatchPages
             elseif($match['started_at']||$match['state']==='CANCELLED')$body.='<div class="notice">ไม่เปิดให้แก้ไขกำหนดการแข่งขันในสถานะนี้</div>';
             if($match['scheduled_start']!==null)$body.='<dl class="match-schedule-summary"><dt>เวลาเริ่มแข่งขัน</dt><dd>'.self::time($match['scheduled_start']).'</dd><dt>สนาม</dt><dd>'.self::e($match['venue_name'] ?? 'ยังไม่กำหนดสนาม').'</dd></dl>';
             $body.='</div></section>';
-            $body.='<section class="card"><div class="card-head"><h2>งานหลังการแข่งขัน</h2></div><div class="card-b"><div class="action-row"><a class="btn" href="'.self::e(MatchDetailView::url($path.'/lineups',$filters)).'">รายชื่อผู้เล่น</a><a class="btn primary" href="'.self::e(MatchDetailView::url($path.'/results',$filters)).'">บันทึกรายชื่อและผลการแข่งขัน</a></div></div></section>';
+            $body.='<section class="card"><div class="card-head"><div><h2>งานหลังการแข่งขัน</h2><p>บันทึกจากเอกสารกระดาษ แล้วตรวจสอบและยืนยันทั้งชุด</p></div></div><div class="card-b"><div class="actions"><a class="btn" href="'.self::e(MatchDetailView::url($path.'/results',$filters)).'">'.WorkspaceView::icon('file').'บันทึกรายชื่อและผลการแข่งขัน '.WorkspaceView::icon('arrow').'</a></div></div></section>';
         }elseif($tab==='post'){
             $body='<section class="card"><div class="card-head"><h2>ข้อมูลหลังการแข่งขัน</h2></div><div class="card-b">'.ResultPages::publicResult($db,$match['id']);
             if($current)$body.='<div class="action-row"><a class="btn" href="'.self::e(MatchDetailView::url($path.'/lineups',$filters)).'">รายชื่อผู้เล่น</a><a class="btn primary" href="'.self::e(MatchDetailView::url($path.'/results',$filters)).'">บันทึกและยืนยันผล</a></div>';

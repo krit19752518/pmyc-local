@@ -42,7 +42,7 @@ final class WorkspaceView
             'calendar'=>'M4 5h16v16H4z M8 3v4 M16 3v4 M4 10h16 M8 14h2 M14 14h2 M8 18h2',
             'users'=>'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
             'eye'=>'M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
-            'check'=>'M5 12l4 4L19 6','arrow'=>'M5 12h14 M14 7l5 5-5 5','menu'=>'M3 6h18 M3 12h18 M3 18h18',
+            'check'=>'M5 12l4 4L19 6','arrow'=>'M5 12h14 M14 7l5 5-5 5','back'=>'M19 12H5 M12 19l-7-7 7-7','menu'=>'M3 6h18 M3 12h18 M3 18h18',
             'history'=>'M3 12a9 9 0 1 0 3-6 M3 3v6h6 M12 7v5l3 2','file'=>'M5 3h10l4 4v14H5z M14 3v5h5 M8 12h8 M8 16h8',
             'bracket'=>'M4 3v6h6v6H4v6 M20 3v6h-6v6h6v6 M10 12h4','draw'=>'M5 4h14v16H5z M9 8h6 M9 12h6 M9 16h3'];
         return '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'.($paths[$name] ?? $paths['file']).'"/></svg>';
