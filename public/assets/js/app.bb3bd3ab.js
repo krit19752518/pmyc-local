@@ -600,32 +600,16 @@ document.addEventListener('DOMContentLoaded', function () {
     let cleanUrl = imgUrl.trim();
     cleanUrl = cleanUrl.replace(/([^:]\/)\/+/g, '$1');
 
-    const pathOnly = cleanUrl.split(/[?#]/)[0].toLowerCase();
-    const extMatch = pathOnly.match(/\.([a-z0-9]+)$/);
-    const ext = extMatch ? extMatch[1] : '';
-    const isPdf = ext === 'pdf';
-    const nonImageExts = ['doc', 'docx', 'xls', 'xlsx', 'csv', 'ppt', 'pptx', 'zip', 'rar', 'heic', 'heif'];
+    const isPdf = cleanUrl.toLowerCase().endsWith('.pdf');
     if (isPdf) {
       Swal.fire({
         title: title,
-        html: '<iframe src="' + cleanUrl + '" style="width:100%; height:500px; border:none;" class="rounded border"></iframe>'
-          + '<div class="mt-3"><a href="' + cleanUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>เปิด / ดาวน์โหลดไฟล์ PDF</a></div>',
+        html: '<iframe src="' + cleanUrl + '" style="width:100%; height:500px; border:none;" class="rounded border"></iframe>',
         width: 800,
         customClass: { popup: 'rounded-4 shadow-lg' },
         showCloseButton: true,
         confirmButtonText: 'ปิดหน้าต่าง',
         confirmButtonColor: '#0b2a5b'
-      });
-    } else if (nonImageExts.includes(ext)) {
-      Swal.fire({
-        icon: 'info',
-        title: title,
-        html: '<p class="mb-3">ไฟล์ประเภท <strong>.' + ext.toUpperCase() + '</strong> ไม่สามารถแสดงตัวอย่างเป็นรูปภาพได้โดยตรง</p>'
-          + '<a href="' + cleanUrl + '" target="_blank" rel="noopener noreferrer" download class="btn btn-primary"><i class="bi bi-download me-1"></i>ดาวน์โหลด / เปิดไฟล์</a>',
-        showCloseButton: true,
-        confirmButtonText: 'ปิดหน้าต่าง',
-        confirmButtonColor: '#0b2a5b',
-        customClass: { popup: 'rounded-4 shadow-lg' }
       });
     } else {
       Swal.fire({
@@ -648,8 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
               Swal.fire({
                 icon: 'warning',
                 title: title,
-                html: '<p class="mb-3">ไม่สามารถแสดงตัวอย่างไฟล์ได้ หรือยังไม่ได้อัปโหลดไฟล์ในระบบ</p>'
-                  + '<a href="' + cleanUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>ลองเปิดไฟล์ในแท็บใหม่</a>',
+                text: 'ไม่สามารถโหลดไฟล์รูปภาพได้ หรือยังไม่ได้อัปโหลดไฟล์ในระบบ',
                 confirmButtonColor: '#0b2a5b',
                 customClass: { popup: 'rounded-4 shadow-lg' }
               });
@@ -739,26 +722,3 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   };
 });
-
-  // Validate doc_team_cert / docTeamCert file extension (JPG, PNG, PDF only)
-  document.addEventListener('change', function (e) {
-    const input = e.target;
-    if (!input || input.tagName !== 'INPUT' || input.type !== 'file') return;
-    if (input.name !== 'doc_team_cert' && input.name !== 'docTeamCert') return;
-    const file = input.files && input.files[0];
-    if (!file) return;
-    const ext = (file.name.split('.').pop() || '').toLowerCase();
-    if (!['jpg', 'jpeg', 'png', 'pdf'].includes(ext)) {
-      input.value = '';
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          icon: 'warning',
-          title: 'ชนิดไฟล์ไม่ถูกต้อง',
-          text: 'หนังสือรับรองทีมรองรับเฉพาะไฟล์ JPG, PNG หรือ PDF เท่านั้น',
-          confirmButtonColor: '#0b2a5b'
-        });
-      } else {
-        alert('หนังสือรับรองทีมรองรับเฉพาะไฟล์ JPG, PNG หรือ PDF เท่านั้น');
-      }
-    }
-  });

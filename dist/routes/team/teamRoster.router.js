@@ -4,6 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.teamRosterRouter = void 0;
+const womenRegistration_service_1 = require("../../services/womenRegistration.service");
+const womenLegacyGuard_1 = require("../../middleware/womenLegacyGuard");
+const teamPortal_1 = require("../../views/teamPortal");
 const teamArea_1 = require("../../utils/teamArea");
 const teamCategory_service_1 = require("../../services/teamCategory.service");
 const teamRegistrationRank_service_1 = require("../../services/teamRegistrationRank.service");
@@ -87,6 +90,11 @@ router.get('/team/index.php', app_1.checkTeamSession, async (req, res) => {
     const u14Count = players.filter(p => hasCat(p, 'U14')).length;
     const u16Count = players.filter(p => hasCat(p, 'U16')).length;
     const u18Count = players.filter(p => hasCat(p, 'U18')).length;
+    let womenSummary;
+    if (await (0, womenRegistration_service_1.womenReady)()) {
+        const d = await (0, womenRegistration_service_1.loadWomen)(teamId, womenRegistration_service_1.WOMEN_SEASON);
+        womenSummary = { season: womenRegistration_service_1.WOMEN_SEASON, enrolled: Boolean(d.enrollment), submitted: Boolean(d.enrollment?.submitted_at), withdrawn: Boolean(d.enrollment?.withdrawn_at), eligible: (0, womenRegistration_service_1.womenEligible)(d), players: d.players.length, goalkeepers: d.players.filter((p) => p.position === 'GK').length, officials: d.officials.length };
+    }
     const allTeams = await (0, app_1.getDbRegisteredTeams)(Boolean(profile.isDemo));
     const registrationRanks = (0, teamRegistrationRank_service_1.getTeamRegistrationRanks)(allTeams);
     const registrationArea = (0, teamRegistrationRank_service_1.getRegistrationArea)(profile);
@@ -220,68 +228,7 @@ router.get('/team/index.php', app_1.checkTeamSession, async (req, res) => {
         catch (e) { }
     }
     const content = `
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white border-bottom fw-bold text-navy py-3">
-      <i class="bi bi-speedometer2 me-2"></i> ภาพรวมทีม (Overview)
-    </div>
-    <div class="card-body p-4">
-      ${teamStatusAlertHtml}
-
-      <div class="row g-2 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 mb-4">
-        <div class="col">
-          <div class="card bg-light border p-3 text-center h-100 justify-content-center">
-            <small class="text-muted fw-semibold">วัน / เวลา ที่ลงสมัคร</small>
-            <h6 class="fw-bold text-navy mt-1 mb-0">${regDateTimeStr}</h6>
-          </div>
-        </div>
-        <div class="col">
-          <div class="card bg-light border p-3 text-center h-100 justify-content-center">
-            <small class="text-muted fw-semibold">สโมสร / โรงเรียน / อะคาเดมี่ / สังกัด</small>
-            <h6 class="fw-bold text-navy mt-1 mb-0">${profile.school || '-'}</h6>
-          </div>
-        </div>
-        <div class="col">
-          <div class="card bg-light border p-3 text-center h-100 justify-content-center">
-            <small class="text-muted fw-semibold">จังหวัด</small>
-            <h6 class="fw-bold text-navy mt-1 mb-0">${profile.province || '-'}</h6>
-          </div>
-        </div>
-        <div class="col">
-          <div class="card bg-light border p-3 text-center h-100 justify-content-center">
-            <small class="text-muted fw-semibold">โซน / เขต / อำเภอ</small>
-            <h6 class="fw-bold text-navy mt-1 mb-0">${(0, teamArea_1.getTeamDistrictName)(profile) || '-'}</h6>
-          </div>
-        </div>
-        <div class="col">
-          <div class="card bg-light border p-3 text-center h-100 justify-content-center">
-            <small class="text-muted fw-semibold">จำนวนนักกีฬา (รวมทุกรุ่น)</small>
-            <h6 class="fw-bold text-navy mt-1 mb-0">${players.length} คน</h6>
-          </div>
-        </div>
-        <div class="col">
-          <div class="card bg-light border p-3 text-center h-100 justify-content-center">
-            <small class="text-muted fw-semibold">เจ้าหน้าที่ประจำทีม</small>
-            <h6 class="fw-bold text-navy mt-1 mb-0">${officials.length} คน</h6>
-          </div>
-        </div>
-      </div>
-
-      <h6 class="fw-bold text-navy mb-3"><i class="bi bi-check2-square me-1"></i> รายการตรวจเช็คความสมบูรณ์ของข้อมูล</h6>
-      <ul class="list-group mb-4">
-        <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
-          <span class="fs-6 fw-bold text-dark"><i class="bi bi-shield-check text-success me-2"></i> ข้อมูลทีมและสถานที่ติดต่อ</span>
-          ${teamInfoStatusBadge}
-        </li>
-        
-        ${playerCategoryRowsHtml}
-
-        <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
-          <span class="fs-6 fw-bold text-dark"><i class="bi bi-person-badge-fill text-success me-2"></i> รายชื่อเจ้าหน้าที่ทีมและผู้ฝึกสอน</span>
-          <span class="badge bg-success fs-6 px-3 py-2 fw-semibold">${officials.length > 0 ? 'ครบถ้วน' : 'ยังไม่ระบุ'}</span>
-        </li>
-      </ul>
-    </div>
-  </div>
+  ${(0, teamPortal_1.renderTeamPortalOverview)({ women: womenSummary, profile, players, officials, categoryStates, registrationRanks, teamId: String(teamId), district: (0, teamArea_1.getTeamDistrictName)(profile), registrationDate: regDateTimeStr, missingParts, base, minGoalkeepers: MIN_GOALKEEPERS })}
 
   <div class="card shadow-sm border-0 mb-4" id="teamSupportReportsCard">
     <div class="card-header bg-white border-bottom fw-bold text-navy py-3">
@@ -738,6 +685,20 @@ router.get('/team/index.php', app_1.checkTeamSession, async (req, res) => {
   </script>`;
     res.send((0, teamLayout_1.renderTeamLayout)('ภาพรวมทีม', content, 'index', base, profile));
 });
+// Read-only team information pages; use the existing authenticated team identity and services.
+router.get('/team/documents.php', app_1.checkTeamSession, async (req, res) => {
+    const base = (0, app_1.getBaseUrl)(req), profile = await (0, app_1.getDbTeamProfile)(req);
+    const selected = typeof req.query.category === 'string' ? req.query.category.toUpperCase() : '';
+    if (selected && !['U14', 'U16', 'U18'].includes(selected))
+        return res.status(400).send((0, teamLayout_1.renderTeamLayout)('เอกสารดาวน์โหลด', '<div class="notice warning"><div><strong>รุ่นนี้ยังไม่เปิดใช้งาน</strong><p>เลือกรุ่นที่สมัครไว้จากเมนูเอกสารดาวน์โหลด</p></div></div>', 'documents', base, profile));
+    if (selected && !(0, teamPortal_1.portalCategories)(profile.categories).includes(selected))
+        return res.status(400).send((0, teamLayout_1.renderTeamLayout)('เอกสารดาวน์โหลด', '<div class="notice warning"><div><strong>ยังไม่ได้สมัครรุ่นนี้</strong><p>เลือกรุ่นที่สมัครไว้จากเมนูเอกสารดาวน์โหลด</p></div></div>', 'documents', base, profile));
+    res.send((0, teamLayout_1.renderTeamLayout)('เอกสารดาวน์โหลด', (0, teamPortal_1.renderTeamPortalDocuments)(profile, base, selected), 'documents', base, profile));
+});
+router.get('/team/guide.php', app_1.checkTeamSession, async (req, res) => {
+    const base = (0, app_1.getBaseUrl)(req), profile = await (0, app_1.getDbTeamProfile)(req);
+    res.send((0, teamLayout_1.renderTeamLayout)('ขั้นตอนและคำแนะนำ', (0, teamPortal_1.renderTeamPortalGuide)(base), 'guide', base, profile));
+});
 router.post('/api/team/cancel-category', app_1.checkTeamSession, teamSession_service_1.requireSignedTeamSession, async (req, res) => {
     const teamId = String(req.teamSession.teamId);
     try {
@@ -984,7 +945,7 @@ router.get('/team/team.php', app_1.checkTeamSession, async (req, res) => {
               <label class="form-label fw-semibold text-dark mb-0">หนังสือรับรองทีม <span class="badge bg-secondary ms-1">OPTIONAL</span></label>
               ${(profile.docTeamCert || profile.doc_team_cert) ? `<button type="button" class="btn btn-sm btn-outline-info py-0 px-2 fs-7" onclick="viewPhoto('หนังสือรับรองทีม', '${base}${(profile.docTeamCert || profile.doc_team_cert)}')"><i class="bi bi-eye me-1"></i> รีวิวเอกสาร</button>` : ''}
             </div>
-            <input type="file" name="doc_team_cert" class="form-control" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+            <input type="file" name="doc_team_cert" class="form-control" accept="image/*,application/pdf">
             ${(profile.docTeamCert || profile.doc_team_cert) ? `<div class="form-text text-success small"><i class="bi bi-check-circle-fill me-1"></i> มีไฟล์เดิมที่อัปโหลดไว้แล้ว</div>` : ''}
           </div>
         </div>
@@ -2661,7 +2622,7 @@ router.get('/team/official-edit.php', app_1.checkTeamSession, async (req, res) =
     res.send((0, teamLayout_1.renderTeamLayout)(pageTitle, content, 'officials', base, profile));
 });
 // API POST /api/team/officials/save (With Multi-Category & 8 Officials Per Category Limit Guard & File Upload)
-router.post('/api/team/officials/save', app_1.checkTeamSession, teamSession_service_1.requireSignedTeamSession, upload_1.upload.any(), async (req, res) => {
+router.post('/api/team/officials/save', app_1.checkTeamSession, teamSession_service_1.requireSignedTeamSession, upload_1.upload.any(), womenLegacyGuard_1.rejectWomenLegacyMutation, async (req, res) => {
     const base = (0, app_1.getBaseUrl)(req);
     const loggedTeamId = await (0, app_1.getLoggedTeamId)(req, false);
     const isJson = req.headers['x-requested-with'] === 'XMLHttpRequest' || (req.headers.accept && req.headers.accept.includes('application/json'));
@@ -2894,7 +2855,7 @@ router.post('/api/team/officials/save', app_1.checkTeamSession, teamSession_serv
     return res.redirect(`${base}/team/officials.php`);
 });
 // API POST /api/team/officials/delete
-router.post('/api/team/officials/delete', app_1.checkTeamSession, async (req, res) => {
+router.post('/api/team/officials/delete', app_1.checkTeamSession, womenLegacyGuard_1.rejectWomenLegacyMutation, async (req, res) => {
     const { id } = req.body;
     if (!id)
         return res.status(400).json({ success: false, error: 'Missing official ID' });
@@ -3679,7 +3640,7 @@ router.get('/team/submit.php', app_1.checkTeamSession, async (req, res) => {
         const needsFixPlayers = catPlayers.filter(p => (0, statusHelper_1.isPlayerCorrectionRequired)(p));
         const approvedPlayers = catPlayers.filter(p => p.docStatus === 'APPROVED');
         const waitingPlayers = catPlayers.filter(p => p.docStatus === 'CORRECTED' || (p.docStatus !== 'APPROVED' && !(0, statusHelper_1.isPlayerCorrectionRequired)(p)));
-        const allPlayersApproved = catPlayers.length > 0 && approvedPlayers.length === catPlayers.length;
+        const categoryApproved = approvedPlayers.length >= statusHelper_1.MIN_APPROVED_CATEGORY_PLAYERS;
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, character => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         }[character]));
@@ -3691,7 +3652,7 @@ router.get('/team/submit.php', app_1.checkTeamSession, async (req, res) => {
             return `<li><a class="fw-semibold" href="${escapeHtml(playerUrl)}">${playerName}</a> สาเหตุการแจ้งปรับแก้ข้อมูล ${reason}</li>`;
         });
         let submissionStatusHtml = '';
-        if (profile.status === 'APPROVED' && isSubmitted && needsFixPlayers.length > 0) {
+        if (profile.status === 'APPROVED' && isSubmitted && !categoryApproved && needsFixPlayers.length > 0) {
             submissionStatusHtml = `<div class="alert alert-warning mb-3 py-2 px-3 fw-semibold small rounded-2 border-0 d-flex align-items-start gap-2">
                    <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
                    <div>
@@ -3703,7 +3664,7 @@ router.get('/team/submit.php', app_1.checkTeamSession, async (req, res) => {
                    <i class="bi bi-exclamation-circle-fill me-2"></i> ผ่านการอนุมัติทีม มีปรับแก้ข้อมูลนักกีฬา
                  </button>`;
         }
-        else if (profile.status === 'APPROVED' && isSubmitted && !allPlayersApproved) {
+        else if (profile.status === 'APPROVED' && isSubmitted && !categoryApproved) {
             submissionStatusHtml = `<div class="alert alert-info mb-3 py-2 px-3 fw-semibold small rounded-2 border-0 d-flex align-items-start gap-2">
                    <i class="bi bi-clock-history fs-5 text-info"></i>
                    <div>
@@ -3715,16 +3676,17 @@ router.get('/team/submit.php', app_1.checkTeamSession, async (req, res) => {
                    <i class="bi bi-hourglass-split me-2"></i> ผ่านการอนุมัติทีม รอการตรวจสอบนักกีฬา
                  </button>`;
         }
-        else if (profile.status === 'APPROVED' && isSubmitted && allPlayersApproved) {
+        else if (profile.status === 'APPROVED' && isSubmitted && categoryApproved) {
             submissionStatusHtml = `<div class="alert alert-success mb-3 py-2 px-3 fw-semibold small rounded-2 border-0 d-flex align-items-center gap-2">
                    <i class="bi bi-shield-check fs-5 text-success"></i>
                    <div>
                      <strong class="d-block text-success">รับรองแล้ว</strong>
-                     <span class="text-muted small">ทีมผ่านการอนุมัติ และนักกีฬาได้รับอนุมัติครบทุกคน</span>
+                     <span class="text-muted small">ทีมผ่านการอนุมัติ และนักกีฬาในรุ่นได้รับอนุมัติอย่างน้อย 18 คน</span>
+                     ${needsFixPlayers.length ? '<ol class="mb-0 mt-1 ps-3 text-muted small">' + correctionPlayersHtml + '</ol>' : ''}
                    </div>
                  </div>
                  <button class="btn btn-success btn-lg w-100 fw-bold disabled" disabled>
-                   <i class="bi bi-check-circle-fill me-2"></i> รับรองแล้ว (นักกีฬาอนุมัติครบทุกคน)
+                   <i class="bi bi-check-circle-fill me-2"></i> รับรองแล้ว (นักกีฬาอนุมัติอย่างน้อย 18 คน)
                  </button>`;
         }
         else if (isSubmitted) {

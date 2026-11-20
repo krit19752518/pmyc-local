@@ -57,6 +57,8 @@ function renderAdminLayout(title, bodyContent, activeAdminNav = 'dashboard', bas
           <span class="text-nowrap">รายการทีมลงทะเบียน</span>
         </a>
 
+        ${['SUPER_ADMIN', 'DOCUMENT_VERIFIER', 'SAT_OFFICER'].includes(user.roleCode) ? `<a href="${base}/admin/women.php" class="list-group-item list-group-item-action d-flex align-items-center gap-2 py-3"><i class="bi bi-shield fs-5"></i><span>รับสมัครหญิง U18 · จังหวัด</span></a>` : ''}
+
         <a href="${base}/admin/players.php" class="list-group-item list-group-item-action d-flex align-items-center gap-2 py-3 ${activeAdminNav === 'players' ? 'active bg-navy border-navy text-white fw-bold' : ''}">
           <i class="bi bi-person-badge fs-5"></i>
           <span class="text-nowrap">รายการนักกีฬา</span>

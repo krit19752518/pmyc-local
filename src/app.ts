@@ -21,6 +21,7 @@ import { upload } from './middleware/upload';
 import { publicRouter } from './routes/public.router';
 import { createRegistrationStatisticsRouter } from './routes/registrationStatistics.router';
 import { teamAuthRouter } from './routes/team/teamAuth.router';
+import { womenRegistrationRouter } from './routes/team/womenRegistration.router';
 import { teamRosterRouter } from './routes/team/teamRoster.router';
 import { adminPortalRouter } from './routes/admin/adminPortal.router';
 import { adminReportsRouter } from './routes/admin/adminReports.router';
@@ -100,6 +101,7 @@ app.use(express.static(publicDir));
 // Mount Routers
 app.use(createRegistrationStatisticsRouter());
 app.use(publicRouter);
+app.use(womenRegistrationRouter);
 app.use(teamAuthRouter);
 app.use(teamRosterRouter);
 app.use(adminPortalRouter);

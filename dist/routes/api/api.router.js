@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.apiRouter = void 0;
+const womenLegacyGuard_1 = require("../../middleware/womenLegacyGuard");
 const teamArea_1 = require("../../utils/teamArea");
 const express_1 = require("express");
 const fs_1 = __importDefault(require("fs"));
@@ -747,8 +748,10 @@ async function handleTeamRegistration(req, res, isDemo) {
     const categoriesStr = selectedCategories.join(',');
     const registeredTeams = await (0, app_1.getDbRegisteredTeams)(isDemo);
     const maxNum = registeredTeams.reduce((max, t) => {
-        const num = parseInt(String(t.id || '').replace(/\D/g, ''), 10);
-        return !isNaN(num) && num > max ? num : max;
+        // Opaque IDs from the shared women registration must not become an enormous numeric sequence.
+        const match = /^FTM-(\d+)$/.exec(String(t.id || ''));
+        const num = match ? Number(match[1]) : NaN;
+        return Number.isSafeInteger(num) && num > max ? num : max;
     }, 0);
     const newTeamId = isTestReq && req.body.teamName?.includes('ชลบุรี') ? `FTM-TEST-${Date.now()}` : `FTM-${String(maxNum + 1).padStart(3, '0')}`;
     const newTeam = {
@@ -1974,7 +1977,7 @@ router.post('/api/team/players/save', app_1.checkTeamSession, parseTeamUploadAny
   `);
 });
 // API POST /api/team/players/delete
-router.post('/api/team/players/delete', app_1.checkTeamSession, async (req, res) => {
+router.post('/api/team/players/delete', app_1.checkTeamSession, womenLegacyGuard_1.rejectWomenLegacyMutation, async (req, res) => {
     const profile = await (0, app_1.getDbTeamProfile)(req);
     const loggedTeamId = await (0, app_1.getLoggedTeamId)(req);
     const { id } = req.body;

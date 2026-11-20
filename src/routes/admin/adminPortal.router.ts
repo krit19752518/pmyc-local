@@ -1,3 +1,4 @@
+import { rejectWomenLegacyMutation } from '../../middleware/womenLegacyGuard';
 import { normalizeProvince, normalizeDistrictForSave, getTeamDistrictName, normalizeDistrictName } from "../../utils/teamArea";
 import { reviewTeamCategory, TeamCategoryError, changeTeamCategory, readPersistedCategoryStates } from "../../services/teamCategory.service";
 import { getTeamRegistrationRanks, getRegistrationArea } from "../../services/teamRegistrationRank.service";
@@ -7,7 +8,7 @@ import path from "path";
 import { createHash } from "crypto";
 import { pool } from "../../db";
 import { renderAdminLayout } from "../../adminLayout";
-import { getCategoryStatus, getTeamStatusInfo, getPlayerDocStatusInfo, getCompletedApprovalRanks } from "../../utils/statusHelper";
+import { getCategoryStatus, getTeamStatusInfo, getPlayerDocStatusInfo, getCompletedApprovalRanks, MIN_APPROVED_CATEGORY_PLAYERS } from "../../utils/statusHelper";
 import { getAuditFieldChanges, writeAuditLog } from "../../services/auditLog.service";
 import { withDbTransaction } from "../../services/dbTransaction.service";
 import { adminPortalForRequest, buildAdminSessionCookies, checkAdminSession, clearAdminSessionCookies } from "../../services/adminSession.service";
@@ -6285,7 +6286,7 @@ router.get('/admin/players.php', checkAdminSession, async (req: PortalRequest, r
 });
 
 // Admin Save Player Remark & Document Status API
-router.post('/api/admin/players/save-remark', checkAdminSession, async (req: PortalRequest, res: Response) => {
+router.post('/api/admin/players/save-remark', checkAdminSession, rejectWomenLegacyMutation, async (req: PortalRequest, res: Response) => {
   try {
     const { playerId, docStatus, remarks, isDemo: isDemoRequest } = req.body || {};
     const currentUser = (req as any).adminUser as AdminUser | undefined;
@@ -6388,7 +6389,7 @@ router.post('/api/admin/players/save-remark', checkAdminSession, async (req: Por
 
 
 // Admin Delete Player API (/api/admin/players/delete)
-router.post('/api/admin/players/delete', async (req: PortalRequest, res: Response) => {
+router.post('/api/admin/players/delete', rejectWomenLegacyMutation, async (req: PortalRequest, res: Response) => {
   try {
     const { playerId } = req.body || {};
     if (!playerId) {
@@ -6426,7 +6427,7 @@ router.post('/api/admin/players/delete', async (req: PortalRequest, res: Respons
 
 
 // Admin Delete Official API (/api/admin/officials/delete)
-router.post('/api/admin/officials/delete', async (req: PortalRequest, res: Response) => {
+router.post('/api/admin/officials/delete', rejectWomenLegacyMutation, async (req: PortalRequest, res: Response) => {
   try {
     const { officialId } = req.body || {};
     if (!officialId) {

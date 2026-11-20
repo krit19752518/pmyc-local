@@ -23,8 +23,11 @@ export interface CategoryPlayerCounts {
   needsFix: number;
 }
 
+/** Owner-confirmed minimum for approving an entered age category. */
+export const MIN_APPROVED_CATEGORY_PLAYERS = 18;
 
-interface ApprovalRankTeam {
+
+interface ApprovalRankTeam extends TeamStatusInfo {
   id: string;
   status: string;
   province?: string;
@@ -46,7 +49,7 @@ interface ApprovalEvent {
 }
 
 
-/** Rank currently fully approved teams by approval time, with registration-time fallback for legacy records. */
+/** Rank approved teams when their category reaches 18 approved players. */
 export function getCompletedApprovalRanks(
   teams: ApprovalRankTeam[],
   category: string,
@@ -74,12 +77,15 @@ export function getCompletedApprovalRanks(
     const players = (team.teamPlayers || []).filter(player =>
       String(player.category || player.categories || 'U14').toUpperCase().split(',').map(value => value.trim()).includes(category)
     );
-    if (!players.length || !players.every(player => player.docStatus === 'APPROVED')) continue;
+    if (getCategoryStatus(team, category, players).text !== 'อนุมัติ') continue;
     const teamEvent = latestTeamEvent.get(String(team.id));
-    const playerEvents = players.map(player => latestPlayerEvent.get(String(player.id)));
+    const playerEvents = players.filter(player => player.docStatus === 'APPROVED')
+      .map(player => latestPlayerEvent.get(String(player.id)))
+      .filter((event): event is {status: unknown; timestamp: number} => event?.status === 'APPROVED')
+      .sort((a, b) => a.timestamp - b.timestamp);
     let approvalCompletion = Number.NaN;
-    if (teamEvent?.status === 'APPROVED' && playerEvents.every(event => event?.status === 'APPROVED')) {
-      approvalCompletion = Math.max(teamEvent.timestamp, ...playerEvents.map(event => event!.timestamp));
+    if (teamEvent?.status === 'APPROVED' && playerEvents.length >= MIN_APPROVED_CATEGORY_PLAYERS) {
+      approvalCompletion = Math.max(teamEvent.timestamp, playerEvents[MIN_APPROVED_CATEGORY_PLAYERS - 1].timestamp);
     }
     const registrationTime = new Date(team.createdAt || team.created_at || 0).getTime();
     const areaKey = JSON.stringify([
@@ -157,20 +163,19 @@ function getCategoryStatus(team: TeamStatusInfo, categoryCode: string, teamPlaye
     }
     // Check player approval statuses within this category
     const hasRejected = needsFixPlayers.length > 0;
-    const allApproved = playersInCat.length > 0 && playersInCat.every(p => p.docStatus === 'APPROVED');
+    const categoryApproved = counts.approved >= MIN_APPROVED_CATEGORY_PLAYERS;
+    if (categoryApproved) {
+        return {
+            text: 'อนุมัติ',
+            badgeHtml: '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>อนุมัติ</span>',
+            counts
+        };
+    }
     // At least one player needs correction after review.
     if (hasRejected) {
         return {
             text: 'ปรับแก้ข้อมูลนักกีฬา',
             badgeHtml: '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-exclamation-circle-fill me-1"></i>ปรับแก้ข้อมูลนักกีฬา</span>',
-            counts
-        };
-    }
-    // 5. "อนุมัติ" - SAT approved ALL players in this category
-    if (allApproved) {
-        return {
-            text: 'อนุมัติ',
-            badgeHtml: '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>อนุมัติ</span>',
             counts
         };
     }
