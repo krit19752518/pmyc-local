@@ -308,68 +308,173 @@
     btn.addEventListener('click', clearSavedFilters);
   });
   if (!form) return;
-  const dashboard = form.elements.namedItem('dashboard_filters');
-  if (dashboard) {
-    const clear = () => {
-      clearSavedFilters();
-      const url = new URL(form.action, window.location.href);
-      for (const name of ['event_id', 'data_mode']) {
-        const value = form.elements.namedItem(name)?.value;
-        if (value) url.searchParams.set(name, value);
-      }
-      window.location.assign(url.toString());
-    };
-    root.querySelector('[data-dashboard-clear]')?.addEventListener('click', clear);
-  }
-  const province = form.elements.namedItem('province');
-  const district = form.elements.namedItem('district');
-  const valid = () => {
-    if (!province || province.readOnly) return true;
-    if (province.tagName === 'SELECT') return province.checkValidity();
-    province.value = province.value.trim();
-    const choices = [...form.querySelectorAll('#workspace-provinces option')].map(x => x.value);
-    province.setCustomValidity(province.value && !choices.includes(province.value) ? 'กรุณาเลือกจังหวัดที่มีสิทธิ์จากรายการ' : '');
-    return province.checkValidity();
+  let activeFetch = null;
+  const isDashboardPage = () => Boolean(root.querySelector('.workspace-filters input[name="dashboard_filters"]'));
+  const validProvince = targetForm => {
+    const prov = targetForm?.elements.namedItem('province');
+    if (!prov || prov.readOnly) return true;
+    if (prov.tagName === 'SELECT') return prov.checkValidity();
+    prov.value = prov.value.trim();
+    const choices = [...targetForm.querySelectorAll('#workspace-provinces option')].map(x => x.value);
+    prov.setCustomValidity(prov.value && !choices.includes(prov.value) ? 'กรุณาเลือกจังหวัดที่มีสิทธิ์จากรายการ' : '');
+    return prov.checkValidity();
   };
-  province?.addEventListener('input', () => province.setCustomValidity(''));
-  form.addEventListener('submit', e => { if (!valid()) { e.preventDefault(); province.reportValidity(); return; } if (dashboard) { try { sessionStorage.setItem('pmyc-dashboard-submit', '1'); } catch (_) {} } });
-  form.addEventListener('change', e => {
+  const fetchDashboard = async (targetUrl, pushHistory = true) => {
+    const curMain = root.querySelector('main');
+    if (!curMain || typeof window.fetch !== 'function' || typeof window.DOMParser !== 'function') {
+      window.location.assign(targetUrl);
+      return;
+    }
+    if (activeFetch) activeFetch.abort();
+    activeFetch = typeof AbortController === 'function' ? new AbortController() : null;
+    curMain.setAttribute('aria-busy', 'true');
+    curMain.style.opacity = '0.65';
+    try {
+      const res = await fetch(targetUrl, {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'fetch' },
+        signal: activeFetch ? activeFetch.signal : undefined
+      });
+      if (!res.ok || (res.url && !new URL(res.url, window.location.href).pathname.endsWith('/dashboard'))) {
+        window.location.assign(targetUrl);
+        return;
+      }
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const newMain = doc.querySelector('main');
+      if (!newMain) {
+        window.location.assign(targetUrl);
+        return;
+      }
+      curMain.innerHTML = newMain.innerHTML;
+      const curNav = root.querySelector('.sidebar nav');
+      const newNav = doc.querySelector('.sidebar nav');
+      if (curNav && newNav) curNav.innerHTML = newNav.innerHTML;
+      const curBrand = root.querySelector('.topbar .brand');
+      const newBrand = doc.querySelector('.topbar .brand');
+      if (curBrand && newBrand && newBrand.hasAttribute('href')) {
+        curBrand.setAttribute('href', newBrand.getAttribute('href'));
+      }
+      if (pushHistory && window.history && typeof window.history.pushState === 'function') {
+        window.history.pushState({ dashboardUrl: targetUrl }, '', targetUrl);
+      }
+      const updatedForm = root.querySelector('.workspace-filters');
+      const updatedUrl = new URL(targetUrl, window.location.href);
+      if (updatedForm && (updatedUrl.searchParams.get('dashboard_filters') === '1' || scopeNames.some(n => updatedUrl.searchParams.get(n)))) {
+        saveScopeFilters(updatedForm);
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      window.location.assign(targetUrl);
+    } finally {
+      curMain.removeAttribute('aria-busy');
+      curMain.style.opacity = '';
+    }
+  };
+  const onClearClick = e => {
+    const activeForm = root.querySelector('.workspace-filters');
+    if (!activeForm || !activeForm.elements.namedItem('dashboard_filters')) return;
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    clearSavedFilters();
+    const url = new URL(activeForm.action, window.location.href);
+    for (const name of ['event_id', 'data_mode']) {
+      const value = activeForm.elements.namedItem(name)?.value;
+      if (value) url.searchParams.set(name, value);
+    }
+    fetchDashboard(url.toString(), true);
+  };
+  const onFormSubmit = (e, activeForm) => {
+    const prov = activeForm.elements.namedItem('province');
+    if (!validProvince(activeForm)) {
+      e.preventDefault();
+      prov?.reportValidity();
+      return;
+    }
+    if (activeForm.elements.namedItem('dashboard_filters')) {
+      e.preventDefault();
+      try { sessionStorage.setItem('pmyc-dashboard-submit', '1'); } catch (_) {}
+      const url = new URL(activeForm.action, window.location.href);
+      const params = new URLSearchParams();
+      for (const [k, v] of new FormData(activeForm).entries()) {
+        params.append(k, String(v));
+      }
+      url.search = params.toString();
+      fetchDashboard(url.toString(), true);
+    }
+  };
+  const onFormChange = (e, activeForm) => {
     const name = e.target.name;
     if (!name) return;
-    if (!valid()) { province.reportValidity(); return; }
-    if (['province', 'division_code', 'stage', 'season_id'].includes(name) && district) district.value = '';
-    if (name === 'division_code' && form.elements.namedItem('data_mode')?.value === 'demo' && province && !province.readOnly) province.value = '';
-    if (name === 'season_id') {
-      form.elements.namedItem('division_code').value = '';
-      if (province && !province.readOnly) province.value = '';
+    const prov = activeForm.elements.namedItem('province');
+    const dist = activeForm.elements.namedItem('district');
+    if (!validProvince(activeForm)) {
+      prov?.reportValidity();
+      return;
     }
-    form.requestSubmit();
-  });
+    if (['province', 'division_code', 'stage', 'season_id'].includes(name) && dist) dist.value = '';
+    if (name === 'division_code' && activeForm.elements.namedItem('data_mode')?.value === 'demo' && prov && !prov.readOnly) prov.value = '';
+    if (name === 'season_id') {
+      const divEl = activeForm.elements.namedItem('division_code');
+      if (divEl) divEl.value = '';
+      if (prov && !prov.readOnly) prov.value = '';
+    }
+    activeForm.requestSubmit();
+  };
+  if (typeof root.addEventListener === 'function') {
+    root.addEventListener('click', e => {
+      if (e.target.closest?.('[data-dashboard-clear]')) onClearClick(e);
+    });
+    root.addEventListener('input', e => {
+      if (e.target && e.target.name === 'province' && e.target.closest?.('.workspace-filters')) {
+        e.target.setCustomValidity('');
+      }
+    });
+    root.addEventListener('submit', e => {
+      const activeForm = e.target.closest?.('.workspace-filters');
+      if (activeForm) onFormSubmit(e, activeForm);
+    });
+    root.addEventListener('change', e => {
+      const activeForm = e.target.closest?.('.workspace-filters');
+      if (activeForm) onFormChange(e, activeForm);
+    });
+  } else {
+    root.querySelector('[data-dashboard-clear]')?.addEventListener('click', onClearClick);
+    form.elements.namedItem('province')?.addEventListener('input', e => e.target.setCustomValidity(''));
+    form.addEventListener('submit', e => onFormSubmit(e, form));
+    form.addEventListener('change', e => onFormChange(e, form));
+  }
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('popstate', () => {
+      if (isDashboardPage()) fetchDashboard(window.location.href, false);
+    });
+  }
 
 })();
 
 /* Issue #7: Interactive 7-Block Dashboard drill-down */
 (() => {
-  const dash = document.querySelector('[data-dashboard-payload]');
-  if (!dash) return;
-  let payload;
-  try { payload = JSON.parse(dash.getAttribute('data-dashboard-payload') || '{}'); } catch { return; }
+  const root = document.querySelector('[data-workspace-v16]');
+  if (!root) return;
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const titles = {
-    'team:all': 'ทีมทั้งหมดที่อนุมัติในขอบเขต',
-    'team:outside': 'ทีมที่ยังไม่อยู่ในผลจับสลาก',
-    'team:draw': 'ทีมที่จับสลากแล้วและยังมีสิทธิ์',
-    'team:changed': 'ทีมในผลจับสลากที่สิทธิ์เปลี่ยน',
-    'schedule:all': 'คู่แข่งขันทั้งหมด (ครบสองทีม)',
-    'schedule:unscheduled': payload.pending ? 'ตรวจและยืนยันผลจับสลากก่อนจัดตาราง' : 'คู่รอจัดตาราง',
-    'schedule:ready': 'คู่พร้อมเผยแพร่ตาราง',
-    'post:awaiting': 'คู่รอบันทึกผลหลังแข่งขัน'
-  };
   const scheduleLabels = { unscheduled: 'รอจัดตาราง', ready: 'พร้อมเผยแพร่', published: 'เผยแพร่แล้ว', cancelled: 'ยกเลิก' };
 
-  dash.addEventListener('click', event => {
+  const handleBlockClick = event => {
     const btn = event.target.closest('[data-dashboard-block]');
     if (!btn || btn.disabled) return;
+    const dash = btn.closest('[data-dashboard-payload]');
+    if (!dash) return;
+    let payload;
+    try { payload = JSON.parse(dash.getAttribute('data-dashboard-payload') || '{}'); } catch { return; }
+    const titles = {
+      'team:all': 'ทีมทั้งหมดที่อนุมัติในขอบเขต',
+      'team:outside': 'ทีมที่ยังไม่อยู่ในผลจับสลาก',
+      'team:draw': 'ทีมที่จับสลากแล้วและยังมีสิทธิ์',
+      'team:changed': 'ทีมในผลจับสลากที่สิทธิ์เปลี่ยน',
+      'schedule:all': 'คู่แข่งขันทั้งหมด (ครบสองทีม)',
+      'schedule:unscheduled': payload.pending ? 'ตรวจและยืนยันผลจับสลากก่อนจัดตาราง' : 'คู่รอจัดตาราง',
+      'schedule:ready': 'คู่พร้อมเผยแพร่ตาราง',
+      'post:awaiting': 'คู่รอบันทึกผลหลังแข่งขัน'
+    };
     const view = btn.getAttribute('data-dashboard-block');
     if (!view) return;
     dash.querySelectorAll('[data-dashboard-block]').forEach(el => {
@@ -406,5 +511,10 @@
       const nextLabel = view === 'schedule:unscheduled' && payload.pending ? 'ตรวจและยืนยันผลจับสลาก' : (kind === 'post' ? 'บันทึกผลแข่งขัน' : 'จัดการตาราง');
       listBody.innerHTML = `<div class="d-tablewrap"><table><thead><tr><th>คู่</th><th>ทีมแข่งขัน</th><th>สถานะ</th><th>สนาม / เวลา</th><th>ดำเนินการ</th></tr></thead><tbody>${rows.map(r => `<tr><td><strong>${esc(r.number)}</strong><br><small class="muted">รอบ ${esc(r.round)}</small></td><td>${esc(r.home)} – ${esc(r.away)}</td><td>${r.awaiting ? 'รอบันทึกผล' : esc(scheduleLabels[r.status] || r.status)}</td><td>${esc(r.venue)}${r.scheduled_start ? '<br><small class="muted">' + esc(r.scheduled_start) + '</small>' : ''}</td><td><a class="btn text compact" href="${esc(nextUrl)}">${nextLabel} →</a></td></tr>`).join('')}</tbody></table></div>`;
     }
-  });
+  };
+  if (typeof root.addEventListener === 'function') {
+    root.addEventListener('click', handleBlockClick);
+  } else {
+    document.querySelector('[data-dashboard-payload]')?.addEventListener?.('click', handleBlockClick);
+  }
 })();
