@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { getRegistrationArea, RegistrationAreaTeam } from '../utils/teamArea';
 import { splitTeamCategories } from '../utils/teamCategoryState';
-import { getCategoryStatus, PlayerStatusInfo } from '../utils/statusHelper';
+import { PlayerStatusInfo } from '../utils/statusHelper';
 import { AREA_REGISTRY, REGISTRY_VERSION } from './registrationStatistics.registry';
 import {
   AGES,
@@ -13,7 +13,8 @@ import {
   zero
 } from './registrationStatistics.service';
 
-export const APPROVAL_DEFINITION_VERSION = 'age-group-current-approved-latest-transition/v1';
+export const APPROVAL_MIN_PLAYERS = 18;
+export const APPROVAL_DEFINITION_VERSION = 'age-group-team-approved-18-players/v2';
 const BANGKOK_OFFSET_MS = 7 * 3600 * 1000;
 
 export type DatePreset = 'all' | 'today' | 'yesterday' | 'week' | 'month' | 'custom';
@@ -333,6 +334,7 @@ export function buildApprovalStatisticsForRange(
 
   for (const team of teams) {
     if (team.is_deleted || team.is_test) continue;
+    if (String(team.status || '').toUpperCase() !== 'APPROVED') continue;
     const cats = splitTeamCategories(team.categories);
     const cancelled = splitTeamCategories(team.cancelled_categories);
     const teamPlayers = playersByTeam.get(team.id) || [];
@@ -342,16 +344,18 @@ export function buildApprovalStatisticsForRange(
       const age = AGES[i];
       if (!cats.includes(age) || cancelled.includes(age)) continue;
       const catPlayers = teamPlayers.filter(p => splitTeamCategories(p.category).includes(age));
-      if (getCategoryStatus(team as any, age, catPlayers).text !== 'อนุมัติ') continue;
+      const approvedPlayers = catPlayers.filter(p => p.docStatus === 'APPROVED');
+      if (approvedPlayers.length < APPROVAL_MIN_PLAYERS) continue;
 
       let approvedAt: Date | null = teamApprovedAt;
       if (approvedAt) {
-        const playerTimes = catPlayers
-          .filter(p => p.docStatus === 'APPROVED')
+        const sortedPlayerTimes = approvedPlayers
           .map(p => latestPlayerApproved.get(String(p.id)))
-          .filter((d): d is Date => Boolean(d));
-        for (const pt of playerTimes) {
-          if (pt.getTime() > approvedAt.getTime()) approvedAt = pt;
+          .filter((d): d is Date => Boolean(d))
+          .sort((a, b) => a.getTime() - b.getTime());
+        if (sortedPlayerTimes.length >= APPROVAL_MIN_PLAYERS) {
+          const eighteenthAt = sortedPlayerTimes[APPROVAL_MIN_PLAYERS - 1];
+          if (eighteenthAt.getTime() > approvedAt.getTime()) approvedAt = eighteenthAt;
         }
       }
 
