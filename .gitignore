@@ -68,3 +68,5 @@
 *.bak-*
 *.syntaxcheck-*
 !/dev-start.cjs
+
+!/public/public-v4/

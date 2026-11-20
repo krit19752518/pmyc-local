@@ -1,0 +1,74 @@
+/* Additional public-page layouts following the shared PMYC reference system. */
+.extra-page{--xp-navy:#0b2a5b;--xp-gold:#f2b705;--xp-muted:#718198;--xp-line:#e6eaf0;min-width:0}
+.extra-page .card{border-radius:.9rem;border:1px solid var(--xp-line);background:#fff;box-shadow:0 3px 13px #132d5010;overflow:hidden}
+.extra-page .card-head{padding:20px 22px;align-items:center;gap:15px}.extra-page .card-head h2{font-size:19px;letter-spacing:0;font-weight:650;color:var(--xp-navy)}
+.extra-page .card-head p{font-size:12px;color:var(--xp-muted);margin-top:5px}.extra-page>.notice{margin-bottom:24px}
+.xp-filter-card{margin-bottom:25px;padding:20px 22px}.xp-filter-card .filters{padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:end;background:transparent;border:0}
+.xp-filter-card .filters label{grid-column:auto!important}.xp-filter-card select{font-size:13px}
+.xp-stat-leaders{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:26px}
+.xp-leader-card{padding:20px;position:relative;min-height:205px}.xp-leader-card h2{font-size:14px;font-weight:500;color:var(--xp-muted);letter-spacing:0;margin:0 0 20px}
+.xp-leader-team{display:flex;align-items:center;gap:10px;min-width:0;font-size:13px;color:var(--xp-navy);font-weight:600}
+.xp-leader-team>.crest{width:34px;height:41px;flex:0 0 auto}.xp-leader-team>div{min-width:0}.xp-leader-team a{overflow-wrap:anywhere}.xp-leader-team small{display:block;font-size:10px;font-weight:400;color:var(--xp-muted);margin-top:3px}
+.xp-leader-value{font-family:'Barlow Condensed',Tahoma,sans-serif;font-size:45px;line-height:1;margin-top:20px;color:var(--xp-navy);font-weight:600}
+.xp-leader-value small{font-family:'Noto Sans Thai',Tahoma,sans-serif;font-size:11px;color:var(--xp-muted);font-weight:400;margin-left:8px}
+.xp-leader-pending{font-size:13px;color:var(--xp-muted);line-height:1.8;margin-top:20px}
+.xp-stat-table{margin-bottom:24px}.xp-sample{font-size:11px;color:#8693a4;white-space:nowrap}.xp-table-scroll{overflow-x:auto;min-width:0}
+.extra-page table{width:100%;border-collapse:collapse;font-size:13px;color:#2d4666;min-width:650px}
+.extra-page th{font-weight:500;font-size:11px;background:#f4f6fa;color:#7d8ba0;text-align:center;padding:13px 12px;border-bottom:1px solid var(--xp-line);white-space:nowrap}
+.extra-page td{padding:16px 12px;border-bottom:1px solid #edf0f4;text-align:center;vertical-align:middle}.extra-page tbody tr:last-child td{border-bottom:0}
+.extra-page .xp-team-col{text-align:left;padding-left:22px;min-width:210px}.xp-team-col .team{font-size:13px;gap:10px}.xp-stat-difference{font-weight:700;color:var(--xp-navy)}
+.xp-table-note{font-size:12px;color:var(--xp-muted);line-height:1.8;padding:16px 22px;border-top:1px solid var(--xp-line)}
+.xp-filter-tabs{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:25px}.xp-filter-tab{display:inline-flex;padding:8px 18px;border:1px solid #dfe5ed;background:white;border-radius:24px;color:#5c6f8a;font-size:13px}
+.xp-filter-tab.active{background:var(--xp-navy);border-color:var(--xp-navy);color:white}.xp-filter-tab:hover{border-color:var(--xp-gold)}
+.xp-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:23px;align-items:stretch}.xp-gallery-card{display:block;min-width:0;transition:box-shadow .15s ease,transform .15s ease}
+.xp-gallery-card:hover{box-shadow:0 8px 24px #132d5020;transform:translateY(-2px)}
+.xp-gallery-cover{aspect-ratio:16/9;background:#0b2a5b;overflow:hidden}.xp-gallery-cover>img{display:block;width:100%;height:100%;object-fit:contain}
+.xp-gallery-copy{padding:19px 20px}.xp-gallery-copy>span{font-size:11px;color:#9a7620}.xp-gallery-copy h2{font-size:16px;line-height:1.6;font-weight:600;color:var(--xp-navy);letter-spacing:0;margin:7px 0 8px}
+.xp-gallery-copy>p{font-size:12px;color:var(--xp-muted)}.xp-gallery-action{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--xp-line);margin-top:17px;padding-top:13px;font-size:12px;color:var(--xp-navy)}
+.xp-media-note{font-size:12px;line-height:1.8;color:var(--xp-muted);margin-top:24px;max-width:900px}
+.xp-women-art{height:100%;min-height:175px;position:relative;background:#0b2a5b;color:white;overflow:hidden;padding:17px 20px;display:flex;flex-direction:column;justify-content:center}
+.xp-women-kicker{font-family:'Barlow Condensed',Tahoma,sans-serif;font-size:10px;letter-spacing:1.2px;color:#e9bd3e;position:relative;z-index:1}
+.xp-women-art>strong{font-family:'Barlow Condensed',Tahoma,sans-serif;font-size:70px;line-height:.95;letter-spacing:2px;color:#f2b705;position:relative;z-index:1;margin-top:8px}
+.xp-women-art>p{font-size:11px;margin-top:6px;position:relative;z-index:1}.xp-women-date{position:absolute;bottom:21px;right:20px;display:flex;align-items:center;gap:8px;z-index:1}
+.xp-women-date>b{font-family:'Barlow Condensed',Tahoma,sans-serif;font-size:39px;line-height:1;font-weight:600;color:#f2b705}.xp-women-date>span{font-size:10px;line-height:1.5}
+.xp-football-lines{position:absolute;right:-34px;top:5px;width:170px;height:170px;fill:none;stroke:#ffffff13;stroke-width:1.5;transform:rotate(-12deg)}
+.xp-album-top{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:22px;color:var(--xp-muted);font-size:12px}
+.xp-album-content{margin:0 auto;max-width:1000px;padding:0;background:#fff}.xp-album-content>img{width:100%;height:auto;display:block}
+.xp-album-content figcaption{padding:18px 22px;font-size:13px;color:var(--xp-muted);line-height:1.8}.xp-album-content .xp-women-art{height:410px;padding:40px 50px}
+.xp-album-content .xp-women-kicker{font-size:17px;letter-spacing:2px}.xp-album-content .xp-women-art>strong{font-size:150px}.xp-album-content .xp-women-art>p{font-size:22px;margin-top:14px}
+.xp-album-content .xp-women-date{bottom:47px;right:50px;gap:17px}.xp-album-content .xp-women-date>b{font-size:83px}.xp-album-content .xp-women-date>span{font-size:21px}
+.xp-album-content .xp-football-lines{width:420px;height:420px;right:-50px;top:-5px}.xp-album-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:15px;margin-top:25px}
+.xp-certificate-state{max-width:760px;margin:0 auto;text-align:center;padding:42px 35px}.xp-certificate-icon{width:105px;height:105px;background:#f4f6fa;border-radius:50%;margin:0 auto 24px;display:flex;align-items:center;justify-content:center}
+.xp-certificate-icon svg{width:70px;height:70px;fill:none;stroke:#5b7092;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.xp-certificate-state h2{font-size:24px;color:var(--xp-navy);font-weight:600;letter-spacing:0}.xp-certificate-state>p{font-size:13px;color:var(--xp-muted);margin-top:10px}
+.xp-certificate-state .xp-certificate-help{font-size:14px;line-height:1.9;max-width:510px;margin:19px auto 25px}.xp-certificate-state .actions{justify-content:center}
+.xp-national-groups{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:30px;min-width:0}.xp-group-card{min-width:0}.xp-group-card table{min-width:380px}
+.xp-state-pill{border-radius:20px;background:#f4f6fa;color:#8b97a8;font-size:11px;padding:4px 10px;white-space:nowrap}.xp-pending-team{color:#8a98aa;font-size:13px}
+.xp-group-slot{display:inline-flex;width:25px;margin-right:12px;font-family:'Barlow Condensed',Tahoma,sans-serif;font-size:15px;color:#acb6c5}
+.xp-national-round{margin:27px 0}.xp-national-round>h2{font-size:21px;color:var(--xp-navy);font-weight:600;letter-spacing:0;margin:0 0 18px}
+.xp-national-match-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;min-width:0}.xp-national-match>header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:17px 20px;border-bottom:1px solid var(--xp-line)}
+.xp-national-match h3{font-size:14px;font-weight:600;color:var(--xp-navy)}.xp-national-match header>span{font-size:10px;color:#8b98aa}
+.xp-national-teams{display:grid;grid-template-columns:1fr 35px 1fr;align-items:center;gap:15px;padding:25px 20px;text-align:center;color:#8796a9}
+.xp-national-teams>div{min-width:0}.xp-national-teams p{font-size:12px;margin-top:10px}.xp-national-teams>b{font-size:25px;font-family:'Barlow Condensed',Tahoma,sans-serif;color:#9aa8bb;font-weight:500}
+.xp-empty-crest{display:inline-flex;width:43px;height:50px;align-items:center;justify-content:center;clip-path:polygon(0 0,100% 0,100% 74%,50% 100%,0 74%);background:#eef1f6;color:#b2bdcc;font-size:22px}
+.xp-national-match>footer{padding:11px 20px;text-align:center;background:#fafbfc;border-top:1px solid var(--xp-line);font-size:11px;color:#8a97a8}
+.xp-national-final{border-top:3px solid var(--xp-gold)!important}.xp-national-groups~.xp-table-note{border:0;padding-left:0}
+@media(max-width:1050px){.xp-stat-leaders{grid-template-columns:repeat(2,minmax(0,1fr))}.xp-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xp-leader-card{min-height:190px}}
+@media(max-width:760px){
+ .xp-filter-card{padding:17px}.xp-filter-card .filters{grid-template-columns:1fr 1fr;gap:15px}.xp-filter-card .filters label:last-child{grid-column:1/-1!important}
+ .xp-national-groups,.xp-national-match-grid{grid-template-columns:1fr;gap:20px}.xp-national-groups{margin-bottom:24px}.xp-national-round>h2{font-size:19px}
+ .xp-national-match>header{gap:12px}.xp-certificate-state{padding:35px 23px}.xp-certificate-state h2{font-size:21px}
+ .extra-page .card-head{padding:18px}.extra-page .card-head h2{font-size:18px}.xp-table-note{font-size:11px;padding:15px 18px}
+ .xp-album-content .xp-women-art{height:340px;padding:30px}.xp-album-content .xp-women-art>strong{font-size:120px}.xp-album-content .xp-women-art>p{font-size:17px}
+ .xp-album-content .xp-women-date{right:30px;bottom:32px}.xp-album-content .xp-women-date>b{font-size:65px}.xp-album-content .xp-women-date>span{font-size:16px}
+ .xp-album-content .xp-women-kicker{font-size:13px}.xp-album-content .xp-football-lines{height:340px;width:340px}.xp-album-content figcaption{padding:16px 18px;font-size:12px}
+}
+@media(max-width:540px){
+ .xp-stat-leaders{gap:13px}.xp-leader-card{padding:16px;min-height:195px}.xp-leader-card h2{font-size:12px;margin-bottom:17px}.xp-leader-team{display:block;font-size:12px}.xp-leader-team>.crest{margin-bottom:10px;width:30px;height:36px}.xp-leader-value{font-size:37px;margin-top:16px}
+ .xp-gallery-grid{grid-template-columns:1fr;gap:20px}.xp-gallery-copy{padding:18px}.xp-gallery-cover{min-height:185px}.xp-gallery-cover .xp-women-art{min-height:185px}.xp-gallery-copy h2{font-size:16px}
+ .xp-filter-tabs{gap:8px}.xp-filter-tab{font-size:12px;padding:7px 15px}.xp-media-note{font-size:11px}.xp-certificate-state .actions{flex-direction:column;gap:10px}.xp-certificate-state .actions .btn{width:100%}
+ .xp-album-content .xp-women-art{height:300px;padding:26px}.xp-album-content .xp-women-art>strong{font-size:106px}.xp-album-content .xp-women-art>p{font-size:15px}
+ .xp-album-content .xp-women-date{right:25px;bottom:25px;gap:9px}.xp-album-content .xp-women-date>b{font-size:53px}.xp-album-content .xp-women-date>span{font-size:13px}
+ .xp-album-content .xp-women-kicker{font-size:11px}.xp-album-content .xp-football-lines{right:-100px}.xp-album-top{font-size:11px}.xp-album-top .btn{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.xp-gallery-card{transition:none}}
