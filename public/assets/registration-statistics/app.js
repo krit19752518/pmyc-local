@@ -74,10 +74,10 @@
     if (statusHost) statusHost.textContent = 'กำลังโหลดข้อมูลสถิติ…';
     try {
       let response = await fetch(buildApiUrl(targetState), { credentials: 'same-origin', cache: 'no-store' });
-      if (response.status === 403 && targetState.tab === 'approval' && host.dataset.adminApprovalApi) {
+      if ((response.status === 403 || response.redirected) && targetState.tab === 'approval' && host.dataset.adminApprovalApi) {
         response = await fetch(buildApiUrl(targetState, host.dataset.adminApprovalApi), { credentials: 'same-origin', cache: 'no-store' });
       }
-      if (response.status === 403 && targetState.tab === 'approval') {
+      if ((response.status === 403 || response.redirected) && targetState.tab === 'approval') {
         restrictedNotice = true;
         loading = false;
         if (statusHost) statusHost.textContent = '';
