@@ -1,3 +1,4 @@
+import { rejectWomenLegacyMutation } from '../../middleware/womenLegacyGuard';
 import { normalizeProvince, normalizeDistrictForSave } from '../../utils/teamArea';
 import { NextFunction, Request, Response, Router } from 'express';
 import fs from 'fs';
@@ -809,8 +810,10 @@ if (!managerName) missingItems.push('ชื่อผู้จัดการท�
 
   const registeredTeams = await getDbRegisteredTeams(isDemo);
   const maxNum = registeredTeams.reduce((max, t) => {
-    const num = parseInt(String(t.id || '').replace(/\D/g, ''), 10);
-    return !isNaN(num) && num > max ? num : max;
+    // Opaque IDs from the shared women registration must not become an enormous numeric sequence.
+    const match = /^FTM-(\d+)$/.exec(String(t.id || ''));
+    const num = match ? Number(match[1]) : NaN;
+    return Number.isSafeInteger(num) && num > max ? num : max;
   }, 0);
   const newTeamId = isTestReq && req.body.teamName?.includes('ชลบุรี') ? `FTM-TEST-${Date.now()}` : `FTM-${String(maxNum + 1).padStart(3, '0')}`;
   const newTeam = {
@@ -2124,7 +2127,7 @@ if (photoUrl) p.photoUrl = photoUrl;
 });
 
 // API POST /api/team/players/delete
-router.post('/api/team/players/delete', checkTeamSession, async (req: Request, res: Response) => {
+router.post('/api/team/players/delete', checkTeamSession, rejectWomenLegacyMutation, async (req: Request, res: Response) => {
   const profile = await getDbTeamProfile(req);
   const loggedTeamId = await getLoggedTeamId(req);
   const { id } = req.body;

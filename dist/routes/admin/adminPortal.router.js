@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.adminPortalRouter = void 0;
+const womenLegacyGuard_1 = require("../../middleware/womenLegacyGuard");
 const teamArea_1 = require("../../utils/teamArea");
 const teamCategory_service_1 = require("../../services/teamCategory.service");
 const teamRegistrationRank_service_1 = require("../../services/teamRegistrationRank.service");
@@ -6204,7 +6205,7 @@ router.get('/admin/players.php', adminSession_service_1.checkAdminSession, async
     res.send((0, adminLayout_1.renderAdminLayout)('รายการนักกีฬา', bodyContent, 'players', base, currentUser, rawQuery));
 });
 // Admin Save Player Remark & Document Status API
-router.post('/api/admin/players/save-remark', adminSession_service_1.checkAdminSession, async (req, res) => {
+router.post('/api/admin/players/save-remark', adminSession_service_1.checkAdminSession, womenLegacyGuard_1.rejectWomenLegacyMutation, async (req, res) => {
     try {
         const { playerId, docStatus, remarks, isDemo: isDemoRequest } = req.body || {};
         const currentUser = req.adminUser;
@@ -6298,7 +6299,7 @@ router.post('/api/admin/players/save-remark', adminSession_service_1.checkAdminS
     }
 });
 // Admin Delete Player API (/api/admin/players/delete)
-router.post('/api/admin/players/delete', async (req, res) => {
+router.post('/api/admin/players/delete', womenLegacyGuard_1.rejectWomenLegacyMutation, async (req, res) => {
     try {
         const { playerId } = req.body || {};
         if (!playerId) {
@@ -6333,7 +6334,7 @@ router.post('/api/admin/players/delete', async (req, res) => {
     }
 });
 // Admin Delete Official API (/api/admin/officials/delete)
-router.post('/api/admin/officials/delete', async (req, res) => {
+router.post('/api/admin/officials/delete', womenLegacyGuard_1.rejectWomenLegacyMutation, async (req, res) => {
     try {
         const { officialId } = req.body || {};
         if (!officialId) {

@@ -89,5 +89,5 @@ async function getDbOfficials(teamId, includeTestData = false) {
             merged.push(m);
         }
     }
-    return merged;
+    return merged.filter((o) => o.categories !== 'U18F');
 }

@@ -35,6 +35,7 @@ Object.defineProperty(exports, "upload", { enumerable: true, get: function () { 
 const public_router_1 = require("./routes/public.router");
 const registrationStatistics_router_1 = require("./routes/registrationStatistics.router");
 const teamAuth_router_1 = require("./routes/team/teamAuth.router");
+const womenRegistration_router_1 = require("./routes/team/womenRegistration.router");
 const teamRoster_router_1 = require("./routes/team/teamRoster.router");
 const adminPortal_router_1 = require("./routes/admin/adminPortal.router");
 const adminReports_router_1 = require("./routes/admin/adminReports.router");
@@ -110,6 +111,7 @@ exports.app.use(express_1.default.static(publicDir));
 // Mount Routers
 exports.app.use((0, registrationStatistics_router_1.createRegistrationStatisticsRouter)());
 exports.app.use(public_router_1.publicRouter);
+exports.app.use(womenRegistration_router_1.womenRegistrationRouter);
 exports.app.use(teamAuth_router_1.teamAuthRouter);
 exports.app.use(teamRoster_router_1.teamRosterRouter);
 exports.app.use(adminPortal_router_1.adminPortalRouter);

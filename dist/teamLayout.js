@@ -1,13 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.renderTeamLayout = renderTeamLayout;
+const teamPortal_1 = require("./views/teamPortal");
 const teamArea_1 = require("./utils/teamArea");
 const supportReportWidget_1 = require("./supportReportWidget");
 const adminSession_service_1 = require("./services/adminSession.service");
 function renderTeamLayout(title, content, activeSubNav = 'index', baseUrl = '', profile) {
-    const base = baseUrl.endsWith('/') && baseUrl !== '/' ? baseUrl.slice(0, -1) : baseUrl;
-    const schoolName = profile?.school || '';
-    const managerName = profile?.managerName || '';
+    const base = baseUrl === '/' ? '' : baseUrl.replace(/\/+$/, '');
+    const schoolName = (0, teamPortal_1.escapeTeamPortal)(profile?.school || '');
+    const managerName = (0, teamPortal_1.escapeTeamPortal)(profile?.managerName || '');
     const userTeams = profile?.userTeams || [];
     const supportActionHtml = activeSubNav === 'index' ? `
     <section class="team-support-qr text-center mt-2" aria-label="แจ้งปัญหาการใช้ระบบผ่าน LINE">
@@ -19,93 +20,48 @@ function renderTeamLayout(title, content, activeSubNav = 'index', baseUrl = '', 
     <li><span class="dropdown-item-text small text-muted fw-bold"><i class="bi bi-arrow-repeat me-1"></i> สลับทีมที่ลงทะเบียน:</span></li>
     ${userTeams.map(t => `
       <li>
-        <a class="dropdown-item ${t.isCurrent ? 'active fw-bold' : ''}" href="${base}/team/switch-team.php?teamId=${t.id}">
-          <i class="bi bi-shield-shaded me-1"></i> ${t.school} ${t.isCurrent ? '<i class="bi bi-check-lg ms-auto"></i>' : ''}
+        <a class="dropdown-item ${t.isCurrent ? 'active fw-bold' : ''}" href="${base}/team/switch-team.php?teamId=${encodeURIComponent(t.id)}">
+          <i class="bi bi-shield-shaded me-1"></i> ${(0, teamPortal_1.escapeTeamPortal)(t.school)} ${t.isCurrent ? '<i class="bi bi-check-lg ms-auto"></i>' : ''}
         </a>
       </li>
     `).join('')}
   ` : '';
+    const nav = [
+        ['index', '/team/index.php', 'house', 'ภาพรวมทีม'], ['team', '/team/team.php', 'shield', 'ข้อมูลทีม'],
+        ['players', '/team/players.php', 'people', 'รายชื่อนักกีฬา'], ['officials', '/team/officials.php', 'person-badge', 'เจ้าหน้าที่ทีม'],
+        ['submit', '/team/submit.php', 'clipboard-check', 'ตรวจสอบและยืนยัน'], ['documents', '/team/documents.php', 'download', 'เอกสารดาวน์โหลด'],
+        ['guide', '/team/guide.php', 'question-circle', 'ขั้นตอนและคำแนะนำ'], ['support-reports', '/team/support-reports.php', 'inbox', 'รายการปัญหาการใช้งานระบบ']
+    ];
+    if (profile?.womenSeason) {
+        const tabs = { players: 'players', officials: 'officials', submit: 'review', documents: 'documents' };
+        for (const item of nav) {
+            if (tabs[item[0]])
+                item[1] = '/team/women.php?season=' + encodeURIComponent(profile.womenSeason) + '&tab=' + tabs[item[0]];
+        }
+    }
+    const currentLabel = nav.find(item => item[0] === activeSubNav)?.[3] || title;
     return `<!doctype html>
-<html lang="th">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b2a5b">
-<title>${title} | Prime Minister's Youth CUP Football</title>
-<meta name="description" content="Prime Minister's Youth CUP Football">
-<meta property="og:title" content="${title} | Prime Minister's Youth CUP Football">
-<meta property="og:description" content="Prime Minister's Youth CUP Football">
-<meta property="og:type" content="website">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#102e56">
+<title>${(0, teamPortal_1.escapeTeamPortal)(title)} | Prime Minister's Youth CUP Football</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="${base}/assets/css/app.css" rel="stylesheet">
-${(0, teamArea_1.renderTeamAreaClientScript)()}
-</head>
-<body class="panel-body">
-
-<nav class="navbar navbar-dark panel-topbar sticky-top">
-  <div class="container-fluid px-3 px-md-4 py-1">
-    <a class="navbar-brand text-truncate d-flex align-items-center gap-2" href="${base}/team/index.php">
-      <img class="brand-logo" src="${base}/assets/img/pmyc_top_logo.png" alt="PMYC Football" style="height: 40px; width: auto;">
-      <span class="fw-bold fs-6">ระบบจัดการทีม</span>
-      <small class="text-white-50 d-none d-lg-inline">· Prime Minister's Youth CUP Football</small>
-    </a>
-    ${profile?.isDemo ? '<span class="badge bg-warning text-dark fs-4 fw-bold px-3 py-2 me-2">ข้อมูล Demo</span>' : ''}
-    <div class="dropdown ms-auto">
-      <button class="btn btn-outline-light btn-sm dropdown-toggle rounded-3 px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="bi bi-person-circle me-1"></i> ${schoolName}
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-        <li><span class="dropdown-item-text small text-muted"><i class="bi bi-person me-1"></i> ผู้จัดการทีม: ${managerName}</span></li>
-        ${teamSwitcherHtml}
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="${base}/index.php" target="_blank"><i class="bi bi-globe me-1"></i> ดูเว็บไซต์</a></li>
-        <li><a class="dropdown-item text-danger" href="${base}/team/logout.php"><i class="bi bi-box-arrow-right me-1"></i> ออกจากระบบ</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
-
-<div class="panel-shell">
-  <aside class="panel-sidebar bg-white" id="sidebar">
-    <div class="py-2">
-      <nav class="nav flex-column">
-        <a href="${base}/team/index.php" class="nav-link ${activeSubNav === 'index' ? 'active' : ''}">
-          <i class="bi bi-speedometer2"></i> ภาพรวมทีม
-        </a>
-        <a href="${base}/team/team.php" class="nav-link ${activeSubNav === 'team' ? 'active' : ''}">
-          <i class="bi bi-shield-shaded"></i> ข้อมูลทีม
-        </a>
-        <a href="${base}/team/players.php" class="nav-link ${activeSubNav === 'players' ? 'active' : ''}">
-          <i class="bi bi-people"></i> รายชื่อนักกีฬา
-        </a>
-        <a href="${base}/team/officials.php" class="nav-link ${activeSubNav === 'officials' ? 'active' : ''}">
-          <i class="bi bi-person-badge"></i> เจ้าหน้าที่ทีม
-        </a>
-        <a href="${base}/team/submit.php" class="nav-link ${activeSubNav === 'submit' ? 'active' : ''}">
-          <i class="bi bi-send-check"></i> ยืนยันรายชื่อ
-        </a>
-        <a href="${base}/team/support-reports.php" class="nav-link ${activeSubNav === 'support-reports' ? 'active' : ''}">
-          <i class="bi bi-inbox"></i> รายการปัญหาการใช้งานระบบ
-        </a>
-      </nav>
-      <div class="px-3 pt-2">${supportActionHtml}</div>
-    </div>
-  </aside>
-
-  <div class="panel-content">
-    ${content}
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="${base}/assets/data/thai-administrative-divisions.js?v=20261014_1"></script>
-<script src="${base}/assets/js/app.bb3bd3ab.js?v=issue11-20261106"></script>
-${(0, adminSession_service_1.renderSessionExpiryClientScript)()}
-</body>
-</html>`;
+<link href="${base}/assets/team-portal/typography.css?v=issue100-1" rel="stylesheet">
+<link href="${base}/assets/team-portal/styles.css?v=issue100-1" rel="stylesheet">
+<link href="${base}/assets/team-portal/integration.css?v=issue100-1" rel="stylesheet">
+${(0, teamArea_1.renderTeamAreaClientScript)()}</head><body class="team-portal">
+<a class="skip" href="#main">ข้ามไปเนื้อหา</a>
+<header class="topbar"><a class="brand" href="${base}/team/index.php" aria-label="PMYC Football ภาพรวมทีม"><img src="${base}/assets/team-portal/assets/pmyc-logo.png" alt="PMYC Football"><span class="brand-copy"><strong>ระบบจัดการทีม</strong><span>PRIME MINISTER’S YOUTH CUP · FOOTBALL</span></span></a>
+<nav class="topnav" aria-label="เมนูด้านบน"><a class="public-link" href="${base}/team/guide.php">คู่มือการสมัคร</a>${profile?.isDemo ? '<span class="badge amber">ข้อมูล Demo</span>' : ''}
+<button class="menu-toggle" type="button" id="teamMenuToggle" aria-label="เปิดเมนู" aria-controls="sidebar" aria-expanded="false">${(0, teamPortal_1.renderTeamPortalIcon)('menu')}</button>
+<div class="dropdown"><button class="account dropdown-toggle" data-bs-toggle="dropdown" type="button" aria-expanded="false">${(0, teamPortal_1.renderTeamPortalIcon)('user')}<span class="account-name">${schoolName || 'ผู้ดูแลทีม'}</span></button>
+<ul class="dropdown-menu dropdown-menu-end shadow"><li><span class="dropdown-item-text small text-muted">ผู้จัดการทีม: ${managerName || '—'}</span></li>${teamSwitcherHtml}<li><hr class="dropdown-divider"></li><li><a class="dropdown-item" href="${base}/index.php" target="_blank" rel="noopener">ดูเว็บไซต์</a></li><li><a class="dropdown-item text-danger" href="${base}/team/logout.php">ออกจากระบบ</a></li></ul></div></nav></header>
+<div class="drawer-overlay" id="teamDrawerOverlay" aria-hidden="true"></div>
+<aside class="sidebar" id="sidebar" aria-label="เมนูจัดการทีม"><div class="side-caption">ระบบจัดการทีม</div><nav class="side-nav">${nav.map(([key, path, icon, label]) => `<a href="${base}${path}" class="${activeSubNav === key ? 'active' : ''}" ${activeSubNav === key ? 'aria-current="page"' : ''}>${(0, teamPortal_1.renderTeamPortalIcon)(icon)}${label}</a>`).join('')}</nav>
+<div class="team-support-area">${supportActionHtml}</div><div class="side-bottom"><div class="rule">ข้อมูลทีมเดียวกัน<br>จัดการรายชื่อแยกตามรุ่น</div></div></aside>
+<main class="main" id="main" tabindex="-1"><div class="content"><div class="breadcrumb">ระบบจัดการทีม <span aria-hidden="true">/</span> ${(0, teamPortal_1.escapeTeamPortal)(currentLabel)}</div>${['index', 'documents', 'guide'].includes(activeSubNav) ? '' : `<div class="pagehead"><div><div class="eyebrow">จัดการทีม</div><h1>${(0, teamPortal_1.escapeTeamPortal)(title)}</h1><p>ใช้ข้อมูลทีมร่วมกัน และจัดการรายชื่อแยกตามรุ่น</p></div></div>`}<div class="team-route-content">${content}</div><footer class="footer"><span>PMYC Football · Prime Minister’s Youth Cup</span><span>ข้อมูลทีมและการสมัครรายรุ่น</span></footer></div></main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="${base}/assets/data/thai-administrative-divisions.js?v=20261014_1"></script><script src="${base}/assets/js/app.bb3bd3ab.js?v=issue11-20261106"></script>
+<script src="${base}/assets/team-portal/portal.js?v=issue100-1"></script>${(0, adminSession_service_1.renderSessionExpiryClientScript)()}
+</body></html>`;
 }

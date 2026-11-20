@@ -44,7 +44,7 @@ async function getDbPlayers(teamId, includeTestData = false) {
         else {
             res = await db_1.pool.query(`SELECT p.* FROM football_player p ${includeTestData ? '' : 'LEFT JOIN football_registered_team t ON t.id = p.team_id WHERE COALESCE(t.is_test, FALSE) = FALSE'} ORDER BY p.jersey_no ASC, p.id ASC`);
         }
-        const dbPlayers = (res && res.rows) ? res.rows.map(mapPlayerRow) : [];
+        const dbPlayers = (res && res.rows) ? res.rows.filter((r) => r.category !== 'U18F').map(mapPlayerRow) : [];
         const testTeamIds = new Set(team_model_1.teamsDatabase.filter((team) => team.isTest || team.is_test).map((team) => String(team.id)));
         const memPlayers = (teamId && teamId !== 'ALL')
             ? exports.playersDatabase.filter((p) => (p.teamId || p.team_id || '') === teamId)

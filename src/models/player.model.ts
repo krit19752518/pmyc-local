@@ -49,7 +49,7 @@ export async function getDbPlayers(teamId?: string, includeTestData = false): Pr
         `SELECT p.* FROM football_player p ${includeTestData ? '' : 'LEFT JOIN football_registered_team t ON t.id = p.team_id WHERE COALESCE(t.is_test, FALSE) = FALSE'} ORDER BY p.jersey_no ASC, p.id ASC`
       );
     }
-    const dbPlayers = (res && res.rows) ? res.rows.map(mapPlayerRow) : [];
+    const dbPlayers = (res && res.rows) ? res.rows.filter((r:any)=>r.category!=='U18F').map(mapPlayerRow) : [];
 
     const testTeamIds = new Set(teamsDatabase.filter((team: any) => team.isTest || team.is_test).map((team: any) => String(team.id)));
     const memPlayers = (teamId && teamId !== 'ALL')
