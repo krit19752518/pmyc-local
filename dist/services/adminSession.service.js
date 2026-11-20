@@ -231,7 +231,12 @@ function buildAdminSessionCookies(req, user, portal, now = Date.now(), createdAt
     const usernameCookie = `${adminUsernameCookieName(portal)}=${encodeURIComponent(user.username)}; Path=${path}; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
     // Keep the old central cookie aliases for integrations during the route migration.
     if (portal === 'central') {
-        return [sessionCookie, usernameCookie, `admin_session=true; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`];
+        return [
+            sessionCookie,
+            usernameCookie,
+            `admin_session=true; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`,
+            `pmyc_admin_session=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`
+        ];
     }
     // Root-scoped alias keeps SAT identity available at /phase2demo. It retains
     // the signed SAT role/expiry and is cleared by the source portal's logout.
@@ -248,6 +253,7 @@ function clearAdminSessionCookies(req, portal) {
     if (portal === 'central') {
         cookies.push(`admin_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${secure}`);
         cookies.push(`admin_user=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${secure}`);
+        cookies.push(`pmyc_admin_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${secure}`);
     }
     if (portal === 'sat')
         cookies.push(`phase2_sat_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secure}`);
