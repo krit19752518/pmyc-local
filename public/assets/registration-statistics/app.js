@@ -37,6 +37,7 @@
       from: p.get('from') || '',
       to: p.get('to') || '',
       province,
+      district: p.get('district') || '',
       zone: province === 'กรุงเทพมหานคร' && (source?.zones || []).some(z => z.name === p.get('zone')) ? p.get('zone') : '',
       level: province || p.get('level') === 'district' ? 'district' : 'province',
       age: ageNames.includes(p.get('age')) ? p.get('age') : 'all',
@@ -140,7 +141,7 @@
     dateError = '';
 
     const p = new URLSearchParams();
-    for (const key of ['tab', 'preset', 'from', 'to', 'province', 'zone', 'level', 'age', 'status', 'q', 'sort', 'page']) {
+    for (const key of ['tab', 'preset', 'from', 'to', 'province', 'district', 'zone', 'level', 'age', 'status', 'q', 'sort', 'page']) {
       if (next[key] &&
         !(key === 'tab' && next[key] === 'registration') &&
         !(key === 'preset' && next[key] === 'all') &&
@@ -157,8 +158,9 @@
     if (needFetch) {
       await loadSnapshot(next);
     }
-    if (replace || location.hash === hash) { history.replaceState(null, '', hash); render(); }
-    else location.hash = hash;
+    // Update hash in place without triggering hashchange scroll-to-top jumps.
+    history.replaceState(null, '', hash);
+    render();
   }
 
   function scope() {
@@ -183,7 +185,8 @@
     const ctx = scope();
     return (state.level === 'district' ? ctx.districts : provinces).filter(r => {
       const text = state.level === 'district' ? r.name + ' ' + r.province : r.name;
-      return text.includes(state.q.trim()) && (state.status === 'all' || (state.status === 'zero' ? isZero(r) : !isZero(r)));
+      const matchesDistrict = !state.district || state.level !== 'district' || r.name === state.district;
+      return matchesDistrict && text.includes(state.q.trim()) && (state.status === 'all' || (state.status === 'zero' ? isZero(r) : !isZero(r)));
     }).sort((a, b) => {
       if (state.sort === 'gap' && isZero(a) !== isZero(b)) return isZero(a) ? -1 : 1;
       if (state.sort !== 'name' && value(a) !== value(b)) return value(b) - value(a);
@@ -240,11 +243,16 @@
   }
 
   function renderFilters(ctx) {
-    const searchLabel = state.level === 'province' ? 'ค้นหาจังหวัด' : ctx.province ? 'ค้นหาอำเภอ/เขต' : 'ค้นหาจังหวัดหรืออำเภอ/เขต';
+    const activeDistricts = ctx.districts
+      .filter(d => value(d) > 0)
+      .sort((a, b) => a.name.localeCompare(b.name, 'th') || a.province.localeCompare(b.province, 'th'));
+    const areaControl = state.level === 'district'
+      ? `<div class="field"><label for="district-filter">อำเภอ/เขตที่มีทีม</label><select id="district-filter"><option value="">${activeDistricts.length ? `ทุกอำเภอ/เขตที่มีทีม (${format(activeDistricts.length)})` : 'ไม่มีอำเภอ/เขตที่มีทีมในช่วงนี้'}</option>${activeDistricts.map(d => `<option value="${escape(d.name)}" ${state.district === d.name ? 'selected' : ''}>${escape(d.name)}${ctx.province ? '' : ' (' + escape(d.province) + ')'} · ${format(value(d))} ทีม</option>`).join('')}</select></div>`
+      : `<div class="field"><label for="area-search">ค้นหาจังหวัด</label><input id="area-search" type="search" autocomplete="off" placeholder="เช่น ขอนแก่น" value="${escape(state.q)}"></div>`;
     return `<section class="panel filters" aria-label="ตัวกรองข้อมูล"><div class="filter-row ${state.province === 'กรุงเทพมหานคร' ? 'with-zone' : ''}">
       <div class="field"><label for="province-filter">จังหวัด</label><select id="province-filter"><option value="">ทั้งหมดทั่วประเทศ</option>${provinceNames.map(p => `<option ${state.province === p.name ? 'selected' : ''}>${escape(p.name)}</option>`).join('')}</select></div>
       ${state.province === 'กรุงเทพมหานคร' ? `<div class="field"><label for="zone-filter">โซนกรุงเทพมหานคร</label><select id="zone-filter"><option value="">ทั้งหมด 3 โซน</option>${source.zones.map(z => `<option ${state.zone === z.name ? 'selected' : ''}>${escape(z.name)}</option>`).join('')}</select></div>` : ''}
-      <div class="field"><label for="area-search">${searchLabel}</label><input id="area-search" type="search" autocomplete="off" placeholder="${state.level === 'province' ? 'เช่น ขอนแก่น' : ctx.province ? 'พิมพ์ชื่ออำเภอ / เขต' : 'เช่น ขอนแก่น หรือ น้ำพอง'}" value="${escape(state.q)}"></div><button class="btn" data-reset>ล้างตัวกรอง</button></div>
+      ${areaControl}<button class="btn" data-reset>ล้างตัวกรอง</button></div>
       <div class="age-options" role="group" aria-label="เลือกรุ่นอายุ"><span>รุ่นอายุ</span>${['all', ...ageNames].map(age => `<button class="age-pill ${age === state.age ? 'active' : ''}" data-age="${age}" aria-pressed="${age === state.age}">${age === 'all' ? 'ทุกรุ่นอายุ' : age}</button>`).join('')}</div>
       <div class="age-options status-options" role="group" aria-label="สถานะพื้นที่"><span>สถานะพื้นที่</span>${[['all', 'ทุกพื้นที่'], ['zero', zeroLabel()], ['registered', activeVerb()]].map(([key, label]) => `<button class="age-pill ${key === 'zero' ? 'zero-filter' : ''} ${key === state.status ? 'active' : ''}" data-status="${key}" aria-pressed="${key === state.status}">${key === 'zero' ? '<span aria-hidden="true">!</span> ' : ''}${label}</button>`).join('')}</div></section>`;
   }
@@ -263,6 +271,7 @@
   }
 
   function render() {
+    const savedY = typeof window.scrollY === 'number' ? window.scrollY : 0;
     state = readState();
     document.querySelectorAll('[data-nav]').forEach(link => { const active = link.dataset.nav === 'stats'; link.classList.toggle('active', active); if (active) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current'); });
     document.querySelector('#navigation').classList.remove('open');
@@ -294,6 +303,7 @@
       </ul></details><p class="print-only"></p></main>`;
     view.querySelectorAll('a[href="__HOME__"]').forEach(a => a.href = host.dataset.home);
     renderResults();
+    if (savedY > 0 && typeof window.scrollTo === 'function') window.scrollTo(0, savedY);
   }
 
   function rowMarkup(row, index) {
@@ -390,17 +400,17 @@
       return;
     }
     if (button.dataset.age) route({ age: button.dataset.age, page: 1 });
-    if (button.dataset.level) route({ level: button.dataset.level, q: '', page: 1 });
+    if (button.dataset.level) route({ level: button.dataset.level, district: '', q: '', page: 1 });
     if (button.dataset.status) route({ status: button.dataset.status, page: 1 });
-    if (button.dataset.coverage) route({ level: 'district', status: button.dataset.coverage, q: '', page: 1 });
-    if (button.hasAttribute('data-national-districts')) route({ province: '', zone: '', level: 'district', q: '', page: 1 });
-    if (button.hasAttribute('data-province')) route({ province: button.dataset.province, zone: '', level: 'district', q: '', page: 1 });
-    if (button.hasAttribute('data-province-gap')) route({ province: button.dataset.provinceGap, zone: '', level: 'district', status: 'zero', q: '', page: 1 });
-    if (button.hasAttribute('data-zone')) route({ zone: state.zone === button.dataset.zone ? '' : button.dataset.zone, q: '', page: 1 });
+    if (button.dataset.coverage) route({ level: 'district', district: '', status: button.dataset.coverage, q: '', page: 1 });
+    if (button.hasAttribute('data-national-districts')) route({ province: '', district: '', zone: '', level: 'district', q: '', page: 1 });
+    if (button.hasAttribute('data-province')) route({ province: button.dataset.province, district: '', zone: '', level: 'district', q: '', page: 1 });
+    if (button.hasAttribute('data-province-gap')) route({ province: button.dataset.provinceGap, district: '', zone: '', level: 'district', status: 'zero', q: '', page: 1 });
+    if (button.hasAttribute('data-zone')) route({ zone: state.zone === button.dataset.zone ? '' : button.dataset.zone, district: '', q: '', page: 1 });
     if (button.hasAttribute('data-district')) showDistrict(button.dataset.district);
-    if (button.dataset.page) { route({ page: Number(button.dataset.page) }, true); document.querySelector('#results-title').scrollIntoView({ block: 'start' }); }
-    if (button.hasAttribute('data-reset')) route({ preset: 'all', from: '', to: '', province: '', zone: '', level: 'province', age: 'all', status: 'all', q: '', sort: 'gap', page: 1 });
-    if (button.hasAttribute('data-clear-search')) route({ q: '', status: 'all', page: 1 });
+    if (button.dataset.page){ route({ page: Number(button.dataset.page) }, true); }
+    if (button.hasAttribute('data-reset')) route({ preset: 'all', from: '', to: '', province: '', district: '', zone: '', level: 'province', age: 'all', status: 'all', q: '', sort: 'gap', page: 1 });
+    if (button.hasAttribute('data-clear-search')) route({ district: '', q: '', status: 'all', page: 1 });
     if (button.classList.contains('close-dialog')) dialog.close();
     if (button.id === 'reload-statistics') location.reload();
     if (button.id === 'export-csv') exportCsv();
@@ -408,8 +418,9 @@
   });
 
   document.addEventListener('change', event => {
-    if (event.target.id === 'province-filter') route({ province: event.target.value, zone: '', level: event.target.value ? 'district' : state.level, q: '', page: 1 });
-    if (event.target.id === 'zone-filter') route({ zone: event.target.value, q: '', page: 1 });
+    if (event.target.id === 'province-filter') route({ province: event.target.value, district: '', zone: '', level: event.target.value ? 'district' : state.level, q: '', page: 1 });
+    if (event.target.id === 'district-filter') route({ district: event.target.value, q: '', page: 1 });
+    if (event.target.id === 'zone-filter') route({ zone: event.target.value, district: '', q: '', page: 1 });
     if (event.target.id === 'sort-filter') route({ sort: event.target.value, page: 1 }, true);
   });
 
@@ -425,13 +436,13 @@
         await loadSnapshot(next);
       }
       render();
-      window.scrollTo(0, 0);
     }
   });
   window.addEventListener('beforeprint', () => { if (location.hash !== '#home') { printMode = true; renderResults(); } });
   window.addEventListener('afterprint', () => { if (printMode) { printMode = false; renderResults(); } });
 
   try {
+    const savedY = typeof window.scrollY === 'number' ? window.scrollY : 0;
     state = readState();
     await loadSnapshot(state);
     render();
