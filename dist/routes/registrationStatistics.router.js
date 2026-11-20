@@ -17,12 +17,31 @@ const REGISTRY_META = {
     name: 'Thailand Geography JSON (MIT)',
     url: 'https://github.com/thailand-geography-data/thailand-geography-json'
 };
+function getCookieValues(req, name) {
+    const header = String(req.headers.cookie || '');
+    if (!header)
+        return [];
+    const values = [];
+    for (const part of header.split(';')) {
+        const idx = part.indexOf('=');
+        if (idx === -1)
+            continue;
+        const k = part.slice(0, idx).trim();
+        if (k !== name)
+            continue;
+        try {
+            values.push(decodeURIComponent(part.slice(idx + 1).trim()));
+        }
+        catch {
+            values.push(part.slice(idx + 1).trim());
+        }
+    }
+    return values;
+}
 async function isAuthorizedForApprovalStats(req) {
     if (process.env.APPROVAL_STATS_PUBLIC_ENABLED === 'true')
         return true;
-    const cookies = (0, helpers_1.parseCookies)(req);
-    const satToken = cookies.phase2_sat_session || cookies.sat_session || '';
-    if (satToken) {
+    for (const satToken of [...getCookieValues(req, 'phase2_sat_session'), ...getCookieValues(req, 'sat_session')]) {
         const sat = (0, adminSession_service_1.verifyAdminSessionToken)(satToken, 'sat');
         if (sat) {
             const user = await (0, adminAuth_1.getAdminUserByUsername)(sat.username);
@@ -30,8 +49,7 @@ async function isAuthorizedForApprovalStats(req) {
                 return true;
         }
     }
-    const centralToken = cookies.admin_session || '';
-    if (centralToken) {
+    for (const centralToken of [...getCookieValues(req, 'pmyc_admin_session'), ...getCookieValues(req, 'admin_session')]) {
         const central = (0, adminSession_service_1.verifyAdminSessionToken)(centralToken, 'central');
         if (central) {
             const user = await (0, adminAuth_1.getAdminUserByUsername)(central.username);
@@ -117,7 +135,12 @@ function createRegistrationStatisticsRouter(store = new registrationStatistics_s
             res.status(503).json({ error: 'statistics_unavailable' });
         }
     });
-    router.get(['/api/authorized/age-group-approval-statistics', '/api/authorized/age-group-approval-statistics.csv'], async (req, res) => {
+    router.get([
+        '/api/authorized/age-group-approval-statistics',
+        '/api/authorized/age-group-approval-statistics.csv',
+        '/admin/api/age-group-approval-statistics',
+        '/admin/api/age-group-approval-statistics.csv'
+    ], async (req, res) => {
         res.setHeader('Cache-Control', 'no-store');
         res.setHeader('X-Content-Type-Options', 'nosniff');
         try {

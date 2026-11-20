@@ -83,6 +83,9 @@ app.use((req, res, next) => {
 // Apply the session boundary to every admin page and API, including older routes
 // that predate per-route middleware. Login endpoints are explicitly allowlisted.
 app.use((req, res, next) => {
+  if (req.path === '/admin/api/age-group-approval-statistics' || req.path === '/admin/api/age-group-approval-statistics.csv') {
+    return next();
+  }
   if (req.path.startsWith('/admin/') || req.path.startsWith('/api/admin/')) {
     return checkAdminSession(req, res, next);
   }
