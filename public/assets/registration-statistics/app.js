@@ -54,11 +54,11 @@
     return '';
   }
 
-  function buildApiUrl(targetState) {
+  function buildApiUrl(targetState, overrideBase) {
     if (targetState.tab === 'registration' && (!targetState.preset || targetState.preset === 'all')) {
       return host.dataset.api;
     }
-    const baseUrl = targetState.tab === 'approval' ? (host.dataset.approvalApi || '/api/authorized/age-group-approval-statistics') : host.dataset.api;
+    const baseUrl = overrideBase || (targetState.tab === 'approval' ? (host.dataset.approvalApi || '/api/authorized/age-group-approval-statistics') : host.dataset.api);
     const params = new URLSearchParams();
     params.set('preset', targetState.preset || 'all');
     if (targetState.preset === 'custom') {
@@ -73,7 +73,10 @@
     loading = true;
     if (statusHost) statusHost.textContent = 'กำลังโหลดข้อมูลสถิติ…';
     try {
-      const response = await fetch(buildApiUrl(targetState), { credentials: 'same-origin', cache: 'no-store' });
+      let response = await fetch(buildApiUrl(targetState), { credentials: 'same-origin', cache: 'no-store' });
+      if (response.status === 403 && targetState.tab === 'approval' && host.dataset.adminApprovalApi) {
+        response = await fetch(buildApiUrl(targetState, host.dataset.adminApprovalApi), { credentials: 'same-origin', cache: 'no-store' });
+      }
       if (response.status === 403 && targetState.tab === 'approval') {
         restrictedNotice = true;
         loading = false;
