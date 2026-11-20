@@ -1,0 +1,64 @@
+{
+  "issue": 99,
+  "reference": "99565dc22ac1d325d7b4e10fdade7b7c03993180",
+  "mode": "mock",
+  "operational_database_reads": false,
+  "operational_database_writes": false,
+  "sections": [
+    {
+      "section": "branding",
+      "status": "reference-assets",
+      "follow_up": "Keep pinned official logo/poster/partners; future CMS media selection"
+    },
+    {
+      "section": "seasons-events",
+      "status": "mock",
+      "follow_up": "Public season/event catalog adapter"
+    },
+    {
+      "section": "fixtures-results",
+      "status": "mock",
+      "follow_up": "Published schedule snapshots/confirmed results/NEW-OLD version adapter"
+    },
+    {
+      "section": "directory",
+      "status": "mock",
+      "follow_up": "Approved public team DTO, geography/zone/host mappings"
+    },
+    {
+      "section": "standings-national",
+      "status": "mock",
+      "follow_up": "Stage3/4 engine and approved qualification/tiebreak rules"
+    },
+    {
+      "section": "team-statistics",
+      "status": "mock",
+      "follow_up": "Official result aggregates; missing lineups remain unknown"
+    },
+    {
+      "section": "news-gallery",
+      "status": "mock",
+      "follow_up": "CMS, albums and real approved media"
+    },
+    {
+      "section": "player-certificate",
+      "status": "pending",
+      "follow_up": "Public permission policy and certificate backend"
+    },
+    {
+      "section": "women-registration",
+      "status": "pending",
+      "follow_up": "Confirm official dates/URL before activation"
+    },
+    {
+      "section": "team-admin-entry",
+      "status": "existing-route",
+      "follow_up": "Same-origin team, SAT and central login routes"
+    },
+    {
+      "section": "documents",
+      "status": "existing-links",
+      "follow_up": "Approved public documents and registration statistics endpoint"
+    }
+  ]
+}

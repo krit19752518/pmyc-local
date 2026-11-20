@@ -1,8 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { renderLayout } from '../layout';
 import { getBaseUrl } from '../utils/helpers';
+import { createPublicWebsiteRouter } from './publicWebsite.router';
 
 export const publicRouter = Router();
+
+// Public v4 owns only public entry aliases and its own assets; legacy service routes remain.
+publicRouter.use(createPublicWebsiteRouter());
 
 // Page 1: /index.php & /
 publicRouter.get(['/', '/index.php'], (req: Request, res: Response) => {
