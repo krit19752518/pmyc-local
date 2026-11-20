@@ -347,3 +347,64 @@
   });
 
 })();
+
+/* Issue #7: Interactive 7-Block Dashboard drill-down */
+(() => {
+  const dash = document.querySelector('[data-dashboard-payload]');
+  if (!dash) return;
+  let payload;
+  try { payload = JSON.parse(dash.getAttribute('data-dashboard-payload') || '{}'); } catch { return; }
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const titles = {
+    'team:all': 'ทีมทั้งหมดที่อนุมัติในขอบเขต',
+    'team:outside': 'ทีมที่ยังไม่อยู่ในผลจับสลาก',
+    'team:draw': 'ทีมที่จับสลากแล้วและยังมีสิทธิ์',
+    'team:changed': 'ทีมในผลจับสลากที่สิทธิ์เปลี่ยน',
+    'schedule:all': 'คู่แข่งขันทั้งหมด (ครบสองทีม)',
+    'schedule:unscheduled': payload.pending ? 'ตรวจและยืนยันผลจับสลากก่อนจัดตาราง' : 'คู่รอจัดตาราง',
+    'schedule:ready': 'คู่พร้อมเผยแพร่ตาราง',
+    'post:awaiting': 'คู่รอบันทึกผลหลังแข่งขัน'
+  };
+  const scheduleLabels = { unscheduled: 'รอจัดตาราง', ready: 'พร้อมเผยแพร่', published: 'เผยแพร่แล้ว', cancelled: 'ยกเลิก' };
+
+  dash.addEventListener('click', event => {
+    const btn = event.target.closest('[data-dashboard-block]');
+    if (!btn || btn.disabled) return;
+    const view = btn.getAttribute('data-dashboard-block');
+    if (!view) return;
+    dash.querySelectorAll('[data-dashboard-block]').forEach(el => {
+      el.setAttribute('aria-pressed', el.getAttribute('data-dashboard-block') === view ? 'true' : 'false');
+    });
+    const listTitle = dash.querySelector('#dashboard-list-title');
+    const listCount = dash.querySelector('#dashboard-list-count');
+    const listBody = dash.querySelector('#dashboard-list-body');
+    if (!listTitle || !listCount || !listBody) return;
+
+    const [kind] = view.split(':');
+    const rows = (payload.lists && payload.lists[view]) || [];
+    listTitle.textContent = titles[view] || '';
+
+    if (kind === 'team' && payload.error) {
+      listCount.textContent = '—';
+      listBody.innerHTML = '<p class="d-note d-error">โหลดข้อมูลการอนุมัติไม่สำเร็จ จึงยังระบุยอดทีมปัจจุบันไม่ได้</p>';
+      return;
+    }
+
+    listCount.textContent = `${rows.length} ${kind === 'team' ? 'ทีม' : 'คู่'}`;
+    if (!rows.length) {
+      listBody.innerHTML = `<p class="muted">${kind === 'team' ? 'ไม่มีทีมในกลุ่มนี้' : 'ไม่มีคู่แข่งขันในสถานะนี้'}</p>`;
+      return;
+    }
+
+    if (kind === 'team') {
+      const targetUrl = (payload.urls && payload.urls.setup) || '#';
+      listBody.innerHTML = `<div class="d-tablewrap"><table><thead><tr><th>ทีม</th><th>สถานะในผลจับสลาก</th><th>ดำเนินการ</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.name)}</td><td>${r.in_draw ? 'อยู่ในผลจับสลาก' : 'ยังไม่อยู่ในผล'}</td><td><a class="btn text compact" href="${esc(targetUrl)}">เปิดหน้าทีม/จับสลาก →</a></td></tr>`).join('')}</tbody></table></div>`;
+    } else {
+      const nextUrl = view === 'schedule:unscheduled' && payload.pending
+        ? ((payload.urls && payload.urls.result) || '#')
+        : ((payload.urls && payload.urls.schedule) || '#');
+      const nextLabel = view === 'schedule:unscheduled' && payload.pending ? 'ตรวจและยืนยันผลจับสลาก' : (kind === 'post' ? 'บันทึกผลแข่งขัน' : 'จัดการตาราง');
+      listBody.innerHTML = `<div class="d-tablewrap"><table><thead><tr><th>คู่</th><th>ทีมแข่งขัน</th><th>สถานะ</th><th>สนาม / เวลา</th><th>ดำเนินการ</th></tr></thead><tbody>${rows.map(r => `<tr><td><strong>${esc(r.number)}</strong><br><small class="muted">รอบ ${esc(r.round)}</small></td><td>${esc(r.home)} – ${esc(r.away)}</td><td>${r.awaiting ? 'รอบันทึกผล' : esc(scheduleLabels[r.status] || r.status)}</td><td>${esc(r.venue)}${r.scheduled_start ? '<br><small class="muted">' + esc(r.scheduled_start) + '</small>' : ''}</td><td><a class="btn text compact" href="${esc(nextUrl)}">${nextLabel} →</a></td></tr>`).join('')}</tbody></table></div>`;
+    }
+  });
+})();
