@@ -47,7 +47,7 @@ export async function readRegistrationStatistics(database: Pool, dateRange: Date
 /** Date-filtered and trend-enabled age-group approval statistics read (OQ1-OQ5). */
 export async function readApprovalStatistics(database: Pool, dateRange: DateRangeFilter): Promise<PeriodStatisticsSnapshot> {
   return withReadOnlyRepeatableRead(database, async (client, asOf) => {
-    const teamsRes = await client.query(`SELECT id, status, categories, cancelled_categories, province, district, contact_province, contact_district, created_at
+    const teamsRes = await client.query(`SELECT id, status, categories, submitted_categories, cancelled_categories, province, district, contact_province, contact_district, created_at
       FROM football_registered_team
       WHERE COALESCE(is_test, FALSE) = FALSE AND COALESCE(is_deleted, FALSE) = FALSE ORDER BY id`);
     const playersRes = await client.query(`SELECT p.id, p.team_id, p.category, p.doc_status

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DateRangeError = exports.APPROVAL_DEFINITION_VERSION = void 0;
+exports.DateRangeError = exports.APPROVAL_DEFINITION_VERSION = exports.APPROVAL_MIN_PLAYERS = void 0;
 exports.toBangkokDateKey = toBangkokDateKey;
 exports.parseBangkokDateRange = parseBangkokDateRange;
 exports.buildRegistrationStatisticsForRange = buildRegistrationStatisticsForRange;
@@ -8,10 +8,10 @@ exports.buildApprovalStatisticsForRange = buildApprovalStatisticsForRange;
 const node_crypto_1 = require("node:crypto");
 const teamArea_1 = require("../utils/teamArea");
 const teamCategoryState_1 = require("../utils/teamCategoryState");
-const statusHelper_1 = require("../utils/statusHelper");
 const registrationStatistics_registry_1 = require("./registrationStatistics.registry");
 const registrationStatistics_service_1 = require("./registrationStatistics.service");
-exports.APPROVAL_DEFINITION_VERSION = 'age-group-current-approved-latest-transition/v1';
+exports.APPROVAL_MIN_PLAYERS = 18;
+exports.APPROVAL_DEFINITION_VERSION = 'age-group-team-approved-18-players/v2';
 const BANGKOK_OFFSET_MS = 7 * 3600 * 1000;
 class DateRangeError extends Error {
     code;
@@ -254,6 +254,8 @@ function buildApprovalStatisticsForRange(teams, players, auditRows, asOf, dateRa
     for (const team of teams) {
         if (team.is_deleted || team.is_test)
             continue;
+        if (String(team.status || '').toUpperCase() !== 'APPROVED')
+            continue;
         const cats = (0, teamCategoryState_1.splitTeamCategories)(team.categories);
         const cancelled = (0, teamCategoryState_1.splitTeamCategories)(team.cancelled_categories);
         const teamPlayers = playersByTeam.get(team.id) || [];
@@ -263,17 +265,19 @@ function buildApprovalStatisticsForRange(teams, players, auditRows, asOf, dateRa
             if (!cats.includes(age) || cancelled.includes(age))
                 continue;
             const catPlayers = teamPlayers.filter(p => (0, teamCategoryState_1.splitTeamCategories)(p.category).includes(age));
-            if ((0, statusHelper_1.getCategoryStatus)(team, age, catPlayers).text !== 'อนุมัติ')
+            const approvedPlayers = catPlayers.filter(p => p.docStatus === 'APPROVED');
+            if (approvedPlayers.length < exports.APPROVAL_MIN_PLAYERS)
                 continue;
             let approvedAt = teamApprovedAt;
             if (approvedAt) {
-                const playerTimes = catPlayers
-                    .filter(p => p.docStatus === 'APPROVED')
+                const sortedPlayerTimes = approvedPlayers
                     .map(p => latestPlayerApproved.get(String(p.id)))
-                    .filter((d) => Boolean(d));
-                for (const pt of playerTimes) {
-                    if (pt.getTime() > approvedAt.getTime())
-                        approvedAt = pt;
+                    .filter((d) => Boolean(d))
+                    .sort((a, b) => a.getTime() - b.getTime());
+                if (sortedPlayerTimes.length >= exports.APPROVAL_MIN_PLAYERS) {
+                    const eighteenthAt = sortedPlayerTimes[exports.APPROVAL_MIN_PLAYERS - 1];
+                    if (eighteenthAt.getTime() > approvedAt.getTime())
+                        approvedAt = eighteenthAt;
                 }
             }
             if (!approvedAt) {
