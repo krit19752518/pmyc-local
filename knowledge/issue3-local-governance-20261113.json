@@ -1,0 +1,171 @@
+{
+  "record_kind": "main_based_local_governance",
+  "date": "2026-11-13",
+  "source_repository": "krit19752518/pmyc-football",
+  "base_commit": "e780093ba4327e43d39fbc13e099981ea28a3f71",
+  "branch": "docs/issue3-local-governance",
+  "feature_ancestry_imported": false,
+  "feature_source_runtime_cron_imported": false,
+  "main_and_accepted_uat_preserved": true,
+  "accepted_uat": {
+    "port": 4573,
+    "commit": "22ddb3fe89508765ef175592c66db3394025d7f4",
+    "result": "owner-reported PASS",
+    "clarification": "UAT 4573 ตามลิงก์ล่าสุด",
+    "scope_excludes": [
+      "Production",
+      "Local4500",
+      "cancellation-exclusion candidate81e6751"
+    ]
+  },
+  "separate_evidence_review": {
+    "commit": "cc523a59ee2a884560b17cfe2eb910782a29f417",
+    "base": "22ddb3fe89508765ef175592c66db3394025d7f4",
+    "disposition": "Preserved local feature-based review; not merged/cherry-picked into this main-based branch",
+    "prior_checks": {
+      "scope": "Historical checks ofcc523a5",
+      "application_suites": 66,
+      "application_tests": 1023,
+      "knowledge_tests": 44
+    }
+  },
+  "feature_backlog": [
+    {
+      "commit": "22ddb3fe89508765ef175592c66db3394025d7f4",
+      "purpose": "Original GitHub-based public statistics",
+      "acceptance": "owner-reported synthetic UAT4573 PASS",
+      "integration": "Separate Issue72 branch retained"
+    },
+    {
+      "commit": "641c0038f870759e4bdac690db5e3f22e8dd5e91",
+      "base": "29bbb38d113094b5c41c31139217342477f24945",
+      "purpose": "Documentation and bounded cron source",
+      "disposition": "Reviewed only in feature evidence commitcc523a5; no scheduler installed here"
+    },
+    {
+      "commit": "81e675174f569f2a0139dac6c2fb36a902fb6d29",
+      "base": "641c0038f870759e4bdac690db5e3f22e8dd5e91",
+      "purpose": "Per-age cancellation exclusion and snapshot definition transition",
+      "disposition": "Private exact patch retained; separate feature acceptance/integration"
+    },
+    {
+      "commit": "9f09966c96515dc2783241ac64b9caafc83f06fe",
+      "base": "81e675174f569f2a0139dac6c2fb36a902fb6d29",
+      "purpose": "Shared statistics navigation entry",
+      "disposition": "Three-path private patch retained; separate feature acceptance/integration",
+      "private_patch_sha256": "c6265221ee5380ffa3be723dc44dd05a920607bf027171e3492f901665cb40bf"
+    }
+  ],
+  "residual_files": [
+    {
+      "path": "knowledge/README.md",
+      "sha256": "809b3cd83f6edac722f0a64d64b0b043d4d47dad2eb2dffb31e4fb90c0b63061",
+      "feature_review_disposition": "Keep accepted contract index and add reconciliation links; do not carry forward stale Gate A/B pending text.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/incident-2026-11-12-ocr-budget-popup-details.md",
+      "sha256": "733b61d52da13dd3692a000266f9098207772045e2a7fd142938756c164981c4",
+      "feature_review_disposition": "Import historical issue70 acceptance/closure narrative; retain limits and replace unavailable receipt reference.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/incident-2026-11-12-public-statistics-data-contract.md",
+      "sha256": "fcef88e103ed4265012e94d2ccb098cc2030ce37709e1da68a543d6e66c28583",
+      "feature_review_disposition": "Keep accepted v1 contract; append explicit boundary for preserved v2 work.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/issue72-production-deployment-plan.md",
+      "sha256": "f195b42fb00113a74f4486a8140ffad007e5933273db367b109964ad9f3fa1d8",
+      "feature_review_disposition": "Replace absent path with a non-executable historical reference; raw versions remain private.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/production-release-ledger.md",
+      "sha256": "23a25f83cb1486a964c322c3ce7989799cfbc701f06521f4d2627ea9edc8eb98",
+      "feature_review_disposition": "Append concise historical reconciliation summary; retain baseline ledger and raw private versions.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/registration-statistics/QA.md",
+      "sha256": "189935505741436678cb57bc52694519a65e4fa43c11d26e53e6f29d99e4a5a5",
+      "feature_review_disposition": "Apply641c003 documentation delta; retain accepted QA; preserve newer cancellation QA separately.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/registration-statistics/README.md",
+      "sha256": "8e4faed38792189685c62d1ebc81607e80a8e303a21b31dbb38c0f01edec4322",
+      "feature_review_disposition": "Apply641c003 documentation delta; keep accepted cumulative semantics; preserve later policy separately.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/registration-statistics/deployment-action-plan.json",
+      "sha256": "ecb2d3d56a4dab35b7cb222b86ecd05e528619efc24b801ef0f8cc06c83d9d19",
+      "feature_review_disposition": "Create stop-only archive descriptor, not a runnable historical proceed plan.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/registration-statistics/deployment-manifest.json",
+      "sha256": "fe2c7a20fe040d7ab575779a7cdf3cac381cfc5d63cb8f88e1a0ce524d2b8e9f",
+      "feature_review_disposition": "Create archive descriptor, not a relabeled frozen deployment manifest.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    },
+    {
+      "path": "knowledge/test_search_incidents.py",
+      "sha256": "9b45750283307cc60edec2f2fa4f884fa7181394bd262a7b4c8bedc80083ae56",
+      "feature_review_disposition": "Change issue70 expected resolution to resolved; add permanent Local revision-boundary retrieval coverage; do not import v2 regression before its implementation.",
+      "governance_disposition": "Raw original versions and feature review preserved; governance edits to shared filenames are selected independently from main."
+    }
+  ],
+  "private_recovery": "/home/krit/my-office/football-recovery/issue3-20261112-local-work",
+  "latest_menu_snapshot": "issue3-governance-20261113T052402Z",
+  "historical_baseline": "docs/PRODUCTION_BASELINE_20261112.json remains unchanged; dated evidence only",
+  "publication_status": "Local preparation; owner approval required before push/open PR",
+  "merge_status": "Not merged; separate approval required",
+  "issue3_closure": "Open; explicit owner sign-off after governance merge and acknowledgment of historical limitations",
+  "production_operations": [],
+  "service_switches_or_restarts": [],
+  "residual_hash_scope": "Hashes refer to the frozen initial reconciliation snapshot; later versions remain in the listed supplemental private snapshots.",
+  "private_snapshot_chain": {
+    "initial_reconciliation": "reconciliation-20261113T044321Z",
+    "supplemental": {
+      "snapshot": "reconciliation-supplement-20261113T051740Z",
+      "known_paths_checked": 99,
+      "paths": [
+        "dist/layout.js",
+        "knowledge/issue72-exclude-cancelled-production-plan.md",
+        "knowledge/production-release-ledger.md",
+        "knowledge/registration-statistics/QA.md",
+        "knowledge/registration-statistics/README.md",
+        "knowledge/test_search_incidents.py",
+        "src/layout.ts",
+        "tests/fixtures/issue72-approved-source-edits.json",
+        "knowledge/incident-2026-11-09-release-source-runtime-drift.md",
+        "knowledge/issue72-statistics-menu-production-plan.md"
+      ],
+      "integrated_into_review": false,
+      "note": "Later original-Local layout/menu and newer-policy records are preserved separately; no accepted UAT application bytes changed."
+    },
+    "feature_review_backup": "review-cc523a59ee2a",
+    "menu_patch_snapshot": "issue3-governance-20261113T052402Z"
+  },
+  "validation": {
+    "checkedAtUtc": "2026-11-13T05:27:39.241085+00:00",
+    "knowledgeTests": {
+      "passed": 42,
+      "failed": 0
+    },
+    "documentationAndRetrievalFiles": 12,
+    "newRelativeLinksMissing": 0,
+    "inheritedMissingLinksInChangedMarkdown": 0,
+    "jsonParse": "PASS",
+    "diffWhitespace": "PASS",
+    "historicalBaselineManifest": "Unchanged",
+    "featureRuntimeSourceCronSqlFixturesPackageChanges": false,
+    "applicationBuildTests": "Not rerun for this documentation-only branch; prior application evidence is separately labeled",
+    "highConfidenceSecretPatterns": "No private-key, GitHub-token or credentialed PostgreSQL URL pattern found in selected text; not a general security audit",
+    "productionAccessOrChanges": false,
+    "serviceActions": false
+  }
+}

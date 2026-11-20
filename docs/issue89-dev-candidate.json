@@ -1,0 +1,28 @@
+{
+  "recorded_at": "2026-11-16T06:33:21.167816+00:00",
+  "base": "94c036e62497bac4ac8493ce78e688bf8c5d128f",
+  "branch": "fix/issue89-live-statistics-home",
+  "authoring_environment": "VPS Dev only",
+  "historical_candidate": "5cb74fe22047a02d1eddf14fcc15de4b77af8898",
+  "runtime_artifacts": {
+    "dist/layout.js": "165bc04f3d9627d605677c4b52d9be2fdb12ff4672fbbaee2f5361a27dfa995d",
+    "dist/routes/public.router.js": "a9c63cfc9f840e46f657cb7e975486d427631ea9ab2c0774d98a2ff346e38051",
+    "dist/routes/registrationStatistics.router.js": "5d257f5c220e320e76554f3a309f0a1078d5bf095347687df779551082eff0c0",
+    "dist/services/registrationStatistics.read.js": "8e6cd736f34df04e8516b3eb354d9a91a6df12d28b9ff9125471021017536175",
+    "dist/views/registrationStatistics.js": "fb6f691e7ce0b78eb8ac1f2a427e24ea26c3b15d44659452531bf33b1452cb9d",
+    "public/assets/registration-statistics/app.js": "63c55b70844690ebdff4adaa8ad3cfe718d9ea61adc6433624b9115a74f5c186",
+    "public/assets/registration-statistics/home.js": "81db8f11eaeb566e5e5cb340a5c0c1e94e95429cb0f2d86f43d39d23fe5349db"
+  },
+  "checks": {
+    "dev_build": "passed",
+    "focused_4_suites_32_tests": "passed",
+    "home_integration": "passed: 3 tests for / and /index.php plus conditional script inclusion",
+    "production_parity": "failed to complete: V8 heap out of memory at wrapper 384MB limit; no result claimed",
+    "full_suite": "not run; parity memory failure and missing /usr/lib/postgresql/18/bin/initdb block complete Dev verification"
+  },
+  "owner_uat": "Owner previously accepted registration-statistics.php; new homepage integration pending",
+  "activation": "No restart in this continuation; new built files are on serving Dev workspace, worker reload not verified",
+  "production": "No Production changes; Gate A/B not entered",
+  "preserved_unrelated_work": "phase2 modifications excluded from commit",
+  "release_status": "DRAFT_NOT_DEPLOYABLE"
+}

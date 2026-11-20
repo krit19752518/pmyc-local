@@ -1,0 +1,86 @@
+name: Issue89 controlled CI
+
+# Retained for historical Issue89 evidence after PR #90 merged; manual-only to avoid skipped runs on normal PRs.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue89-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'krit19752518/pmyc-football'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      NODE_OPTIONS: --max-old-space-size=6144
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+      PHASE2_TEST_PG_BIN: /usr/lib/postgresql/18/bin
+      PHASE2_PHP_BINARY: /usr/bin/php
+    steps:
+      - name: Checkout exact candidate without operational directories
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/uploads/
+            !/.runtime/
+            !/.aws/
+            !/.codex/
+            !/.agents/
+            !/.env*
+      - name: Set up Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install synthetic fixture tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo timedatectl set-timezone Asia/Bangkok
+          date '+%Z %z'
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-18 php-cli php-pgsql php-mbstring
+          "$PHASE2_TEST_PG_BIN/initdb" --version
+          php -r 'exit(extension_loaded("pdo_pgsql") ? 0 : 1);'
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build and verify candidate artifact hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          manifest = json.loads(Path('docs/issue89-dev-candidate.json').read_text())
+          for name, expected in manifest['runtime_artifacts'].items():
+              actual = hashlib.sha256(Path(name).read_bytes()).hexdigest()
+              assert actual == expected, f'Artifact mismatch: {name}'
+              print(f'{actual}  {name}')
+          PY
+      - name: Full suite including parity and synthetic PostgreSQL
+        run: npm test -- --runInBand --json --outputFile=${{ runner.temp }}/issue89-jest.json
+      - name: Incident retrieval regression
+        run: python3 knowledge/test_search_incidents.py
+      - name: Preserve test result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: issue89-jest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/issue89-jest.json
+          if-no-files-found: ignore
+          retention-days: 14

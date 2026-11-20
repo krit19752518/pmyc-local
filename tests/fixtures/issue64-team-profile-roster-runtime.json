@@ -1,0 +1,21 @@
+{
+  "issue": 64,
+  "scope": "Only team profile roster field and its client validation; API/data/download pages preserved",
+  "modules": [
+    {
+      "module": "routes/team/teamRoster.router",
+      "baseline_canonical_sha256": "691f5c31e6dd18b7117830076d543dbe0ba9754b0d58d86251be524b6e8b0b79",
+      "approved_canonical_sha256": "34f33620b2a42fa15144955dbcc5d40d5413d85d9a03e48f43449bf07cca4edd"
+    }
+  ],
+  "edits": [
+    {
+      "before": "                const MAX_FILE_SIZE = 4 * 1024 * 1024;\n                const fileInputs = [\n                  { input: form.querySelector('input[name=\"doc_team_cert\"]'), label: 'หนังสือรับรองทีม' },\n                  { input: form.querySelector('input[name=\"doc_roster\"]'), label: 'ใบรายชื่อนักกีฬา' }\n                ];\n                for (const item of fileInputs) {\n",
+      "after": "                const MAX_FILE_SIZE = 4 * 1024 * 1024;\n                const fileInputs = [\n                  { input: form.querySelector('input[name=\"doc_team_cert\"]'), label: 'หนังสือรับรองทีม' }\n                ];\n                for (const item of fileInputs) {\n"
+    },
+    {
+      "before": "            <input type=\"file\" name=\"doc_team_cert\" class=\"form-control\" accept=\"image/*,application/pdf\">\n            ${(profile.docTeamCert || profile.doc_team_cert) ? `<div class=\"form-text text-success small\"><i class=\"bi bi-check-circle-fill me-1\"></i> มีไฟล์เดิมที่อัปโหลดไว้แล้ว</div>` : ''}\n          </div>\n          <div class=\"col-md-6\">\n            <div class=\"d-flex justify-content-between align-items-center mb-1\">\n              <label class=\"form-label fw-semibold text-dark mb-0\">ใบรายชื่อนักกีฬา <span class=\"badge bg-secondary ms-1\">OPTIONAL</span></label>\n              ${(profile.docRoster || profile.doc_roster) ? `<button type=\"button\" class=\"btn btn-sm btn-outline-info py-0 px-2 fs-7\" onclick=\"viewPhoto('ใบรายชื่อนักกีฬา', '${base}${(profile.docRoster || profile.doc_roster)}')\"><i class=\"bi bi-eye me-1\"></i> รีวิวเอกสาร</button>` : ''}\n            </div>\n            <input type=\"file\" name=\"doc_roster\" class=\"form-control\" accept=\"image/*,application/pdf\">\n            ${(profile.docRoster || profile.doc_roster) ? `<div class=\"form-text text-success small\"><i class=\"bi bi-check-circle-fill me-1\"></i> มีไฟล์เดิมที่อัปโหลดไว้แล้ว</div>` : ''}\n          </div>\n        </div>\n",
+      "after": "            <input type=\"file\" name=\"doc_team_cert\" class=\"form-control\" accept=\"image/*,application/pdf\">\n            ${(profile.docTeamCert || profile.doc_team_cert) ? `<div class=\"form-text text-success small\"><i class=\"bi bi-check-circle-fill me-1\"></i> มีไฟล์เดิมที่อัปโหลดไว้แล้ว</div>` : ''}\n          </div>\n        </div>\n"
+    }
+  ]
+}

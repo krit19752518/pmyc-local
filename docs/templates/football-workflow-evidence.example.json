@@ -1,0 +1,26 @@
+{
+  "template_only": true,
+  "status": "unverified",
+  "issue_url": null,
+  "writer": {"profile": null, "workspace": null, "handoff_accepted_at": null},
+  "source": {"repository": "krit19752518/pmyc-football", "github_base_sha": null, "branch": null, "candidate_sha": null, "merged_sha": null, "candidate_tree": null, "merged_tree": null},
+  "dev": {"source_sha": null, "serving_revision": null, "endpoint": "https://football-dev.pmycfootball.in.th", "scoped_status": null, "exclusions": ["uploads", "private settings", "sessions", "credentials"], "expected_differences": []},
+  "production_stable": {"verified_at": null, "checkout_sha": null, "runtime_root": null, "artifacts": [], "behavior_evidence": [], "unknown_drift": []},
+  "acceptance_criteria": [],
+  "checks": {"baseline_comparison": "not_run", "focused_tests": "not_run", "full_tests": "not_run", "build": "not_run", "native_execution": "not_run", "dev_ui": "not_run", "owner_dev_acceptance": "not_run", "post_merge_tree_comparison": "not_run", "startup_safety": "not_run", "db_schema_and_backfill": "not_run", "sandbox_promote_restore_abort": "not_run"},
+  "effects": {"filesystem": [], "db_reads": [], "db_writes_and_cleanup": [], "authentication_and_audit": [], "network": [], "startup": []},
+  "capabilities": {"discovery": "pending", "branch_worktree": "pending", "dependencies": "pending", "build_test_native": "pending", "db_reads": "pending", "db_writes_cleanup": "pending", "authentication": "pending", "dev_restart": "pending", "production_reads": "pending", "commit": "pending", "push_pr": "pending", "merge": "pending", "local_integration_evidence_writes": "pending"},
+  "release": {
+    "artifacts": [],
+    "artifact_entry_fields": ["source_path", "built_path", "candidate_sha256", "target_path", "live_before_sha256", "stage_path", "stage_sha256", "fresh_backup_path", "backup_sha256", "owner", "mode", "rollback_target"],
+    "gate_a": {"state": "pending", "approval_reference": null, "evidence": []},
+    "gate_b": {"state": "pending", "approval_reference": null, "startup_effects_reviewed": false, "restart_marker": null, "verification_timeout_seconds": null, "rollback_triggers": [], "evidence": []},
+    "final_runtime_hashes": [],
+    "db_pre_post_evidence": [],
+    "authenticated_ui_evidence": [],
+    "rollback_rehearsal": "not_run",
+    "production_rollback": "not_run"
+  },
+  "limitations": ["Template values are not evidence or approval; unknown fields block affected actions."],
+  "outcome": "blocked"
+}

@@ -1,0 +1,36 @@
+{
+  "issue": 59,
+  "baseline_commit": "c7fbd8a6872d0bc98664739ee50d2a8a00a30c1a",
+  "modules": [
+    {
+      "module": "services/playerOcr.parser",
+      "baseline_canonical_sha256": "153fc385ed6afdc4a04e2d67d418ee0701292d3253a6450b741f2084d67e458d",
+      "approved_canonical_sha256": "9e448bc04d4cda7466b4ae8637fe82aa657ab30063ede2182769390b82d58296"
+    },
+    {
+      "module": "services/playerOcr.date",
+      "baseline_canonical_sha256": "655dbe4f8a427580c496b2db5d98cb49b5f1be7a5c716b9c9566469ee886c762",
+      "approved_canonical_sha256": "42c58ec4f1f47c0d4d95bf56ff725ea03c35f97e9678e62524a5a66b83ae66f2"
+    },
+    {
+      "module": "services/playerOcr.types",
+      "baseline_canonical_sha256": "3e21e4435e6b838c179add09d604bb3e34dd4470155be4e4da38c10aee5b066e",
+      "approved_canonical_sha256": "dd03211dd24ae46b00fc7cd7b56e3d50bbb65b210fbe95c18c186ca81d7caf2d"
+    },
+    {
+      "module": "services/playerVerification.service",
+      "baseline_canonical_sha256": "e11642a635ac0a35da603de8782ddc5cd3bb2e8e175ea3daee2da5ea7599f96f",
+      "approved_canonical_sha256": "81d3f4557631642f03af46c0de71b75d74026b331d8d8c679532ba86765f75a4"
+    },
+    {
+      "module": "routes/admin/adminPlayerVerification.router",
+      "baseline_canonical_sha256": "a83b3a465188d8e58cf639c1e4b7669d6fdd42a40325a9e493d9b7aaca111f78",
+      "approved_canonical_sha256": "08292e07d7b459ebfd852a3fe6c0a634c05e9b8b70f8986a585811b4a0f99a01"
+    },
+    {
+      "module": "views/playerVerification",
+      "baseline_canonical_sha256": "77022b602cbea843537297bb18fa9cf66ef6f0765d195ae5cb76a91180659882",
+      "approved_canonical_sha256": "ca0e71c8e671e5a00114742273f6bfb9d54ad498def30888e801447a33eaac7e"
+    }
+  ]
+}

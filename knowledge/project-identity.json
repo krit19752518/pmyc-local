@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "project_key": "grit-solution/football",
+  "project_name": "Football",
+  "directory_relative_to_parent_repository": "football/",
+  "issue_tracker": {
+    "provider": "github",
+    "repository_full_name": "krit19752518/pmyc-football",
+    "repository_url": "https://github.com/krit19752518/pmyc-football",
+    "verified_from_issue": "https://github.com/krit19752518/pmyc-football/issues/55",
+    "last_verified": "2026-11-09"
+  },
+  "resolution_rules": [
+    "An explicit repository supplied by the user takes precedence.",
+    "For a bare issue number while working in Football or its isolated worktrees, use this project's issue_tracker repository.",
+    "Do not infer the issue repository from the parent monorepo Git remote.",
+    "Read the selected issue and verify its project and scope before a mutation.",
+    "Consult the project mapping before asking the user for a repository already recorded here."
+  ],
+  "source_git": {
+    "layout": "dev-vps-primary",
+    "code_hub": "krit19752518/pmyc-football",
+    "dev_root": "/home/zbpzpszw/football-dev/workspace",
+    "local_recovery_root": "/home/krit/my-office/grit-solution/football",
+    "local_recovery_remote": null,
+    "historical_local_mirror": "/home/krit/my-office/pmyc-football",
+    "production_checkout": "/home/zbpzpszw/football_app",
+    "branch": "main",
+    "legacy_parent_root": "/home/krit/my-office/grit-solution",
+    "established": "2026-11-09",
+    "dev_first_confirmed": "2026-11-18"
+  },
+  "development_environment": {
+    "primary": "dev-vps",
+    "host": "118.27.146.15:9922",
+    "workspace_root": "/home/zbpzpszw/football-dev/workspace",
+    "worktrees_root": "/home/zbpzpszw/football-dev/workspace/.runtime",
+    "preview_url": "https://football-dev.pmycfootball.in.th",
+    "default_base_branch": "main"
+  }
+}

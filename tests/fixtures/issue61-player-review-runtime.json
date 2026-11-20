@@ -1,0 +1,46 @@
+{
+  "issue": 61,
+  "scope": "Local implementation; Production deployment requires separate approval",
+  "modules": [
+    {
+      "module": "services/playerOcr.name",
+      "baseline_canonical_sha256": "077e050faa14cc2c19d3dab01003bf56414e25c9ea359e7cfb4576844173c66c",
+      "approved_canonical_sha256": "3f5c63ff1040c214d90e5ba6a6ca119569db24f40f5ecaa38e6f08ff990ed096"
+    },
+    {
+      "module": "services/playerOcr.parser",
+      "baseline_canonical_sha256": "09f90a19be6881b596bdc4c8a4799bf1e7f1bb5ff322952748d075c17d396666",
+      "approved_canonical_sha256": "9cf937a2fd14c6d8aca4962fe0e80638100256d8d5d848a3c6331d82ca0994a5"
+    },
+    {
+      "module": "services/playerOcr.provider",
+      "baseline_canonical_sha256": "4a48a1ef60ef51c9bad235c90b6f4d96d77c06697f9ec159b5dc34b75f2fc83b",
+      "approved_canonical_sha256": "7f2bcd765c8c625cd77b3683663230aafd50dc5a84a7b13e8326c893c8822236"
+    },
+    {
+      "module": "services/playerOcr.types",
+      "baseline_canonical_sha256": "208f04cae589f82a98a4964edbf3a71db916b1705781cabbdb798705d894aecf",
+      "approved_canonical_sha256": "67dbe5e9e2b5bda956835ec9400447cf69edf7b2f7175ead45f06f2fed8b7183"
+    },
+    {
+      "module": "services/playerVerification.service",
+      "baseline_canonical_sha256": "35a14ef74807ee590ea4a9328eb107c73af0ba19e92994e97a9ccba514aa5f66",
+      "approved_canonical_sha256": "d91adf0ec741f821db1946d3ce0022b64c918a3415e2a3fe83fedc7c9415c736"
+    },
+    {
+      "module": "services/playerVerification.details",
+      "baseline_canonical_sha256": null,
+      "approved_canonical_sha256": "21e899722923bf3f614b25e01df5b401051e46e4d5000ab4d1b7f7dc3e6ba847"
+    },
+    {
+      "module": "routes/admin/adminPlayerVerification.router",
+      "baseline_canonical_sha256": "8a0ca6b98e63dd75d27e3c1d1c6910d9ab04117f1602c5252fa1b6613d27ab8f",
+      "approved_canonical_sha256": "f787dc10a63826bd8bf79966176e05472e24a16a2cbb0329aab7d24fff16f806"
+    },
+    {
+      "module": "views/playerVerification",
+      "baseline_canonical_sha256": "f9e242f3147a79295492574e8df4812414e4d6afedfa0b471f1e6ea42b98ce2e",
+      "approved_canonical_sha256": "43028b9068dc36568f57578847acfeaa3787029368354f08a5cec68492d0c41b"
+    }
+  ]
+}

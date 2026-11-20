@@ -1,0 +1,57 @@
+{
+  "issue": 70,
+  "scope": "Photo captions and explicit unlimited OCR quota mode; preserve deployed preview behavior",
+  "modules": [
+    {
+      "module": "services/playerOcr.config",
+      "baseline_runtime_sha256": "f03fe7aa21652749825b0761e7ad7aaf723dd555407b525d1d7b140a59fc4400",
+      "candidate_runtime_sha256": "f5a972caec3b756683357e247dacc8b5878ebcdb0c97dc6989529945bed8f857",
+      "runtime_edits": [
+        {
+          "before": "    const budgetId = String(process.env.PLAYER_OCR_BUDGET_ID || local.budgetId || 'football-iapp-trial');\n    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(budgetId))\n        throw new playerOcr_types_1.VerificationError(503, 'การตั้งค่างบ OCR ไม่ถูกต้อง', 'OCR_CONFIG_INVALID');\n    return { key, url: playerOcr_types_1.IAPP_OCR_ENDPOINT, revision: playerOcr_types_1.OCR_PARSER_REVISION, budgetId,\n        dailyPageLimit: setting(process.env.PLAYER_OCR_DAILY_PAGE_LIMIT ?? local.dailyPageLimit, 100, 1000000),\n        monthlyPageLimit: setting(process.env.PLAYER_OCR_MONTHLY_PAGE_LIMIT ?? local.monthlyPageLimit, 500, 5000000),\n        trialPageLimit: setting(process.env.PLAYER_OCR_TRIAL_PAGE_LIMIT ?? local.trialPageLimit, 100, 5000000) };\n",
+          "after": "    const budgetId = String(process.env.PLAYER_OCR_BUDGET_ID || local.budgetId || 'football-iapp-trial');\n    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(budgetId))\n        throw new playerOcr_types_1.VerificationError(503, 'การตั้งค่างบ OCR ไม่ถูกต้อง', 'OCR_CONFIG_INVALID');\n    const quotaMode = process.env.PLAYER_OCR_QUOTA_MODE ?? local.quotaMode ?? 'limited';\n    if (quotaMode !== 'limited' && quotaMode !== 'unlimited')\n        throw new playerOcr_types_1.VerificationError(503, 'การตั้งค่าโควตา OCR ไม่ถูกต้อง', 'OCR_CONFIG_INVALID');\n    return { key, url: playerOcr_types_1.IAPP_OCR_ENDPOINT, revision: playerOcr_types_1.OCR_PARSER_REVISION, budgetId, quotaMode,\n        dailyPageLimit: setting(process.env.PLAYER_OCR_DAILY_PAGE_LIMIT ?? local.dailyPageLimit, 100, 1000000),\n        monthlyPageLimit: setting(process.env.PLAYER_OCR_MONTHLY_PAGE_LIMIT ?? local.monthlyPageLimit, 500, 5000000),\n        trialPageLimit: setting(process.env.PLAYER_OCR_TRIAL_PAGE_LIMIT ?? local.trialPageLimit, 100, 5000000) };\n"
+        }
+      ],
+      "approved_canonical_sha256": "9d417f7c18ce109708dfbbe0fa9e90ed27ea0a661a46c502fad4be4f069d9ded",
+      "baseline_canonical_sha256": "61be4481e3feff0b4d59555493136cc6a06c9da35d0efa40ea048799ff290ef2"
+    },
+    {
+      "module": "services/playerOcr.provider",
+      "baseline_runtime_sha256": "086965bec780d604cc2d37bbca2cfa4e04928e2565289d25f6bb48ddb572b3b6",
+      "candidate_runtime_sha256": "271bb821bea918678790dbaf51f519b1eb13b6f190de3eaa1aaa2bfa45d27298",
+      "runtime_edits": [
+        {
+          "before": "        }\n        if (prior?.state === 'FAILED' && !force)\n            throw new playerOcr_types_1.VerificationError(409, 'การอ่านเอกสารฉบับนี้เคยไม่สำเร็จ กรุณากดยืนยันอ่านใหม่', 'OCR_PREVIOUS_FAILED');\n        const usage = await db.query(`SELECT\n      COALESCE(SUM(page_count),0)::integer AS total,\n      COALESCE(SUM(page_count) FILTER (WHERE created_at AT TIME ZONE 'Asia/Bangkok' >= date_trunc('day', now() AT TIME ZONE 'Asia/Bangkok')),0)::integer AS daily,\n      COALESCE(SUM(page_count) FILTER (WHERE created_at AT TIME ZONE 'Asia/Bangkok' >= date_trunc('month', now() AT TIME ZONE 'Asia/Bangkok')),0)::integer AS monthly\n      FROM football_player_ocr_usage WHERE budget_id=$1`, [config.budgetId]);\n        const used = usage.rows[0];\n        if (!used || !['total', 'daily', 'monthly'].every(k => Number.isFinite(Number(used[k])) && Number(used[k]) >= 0))\n            throw new playerOcr_types_1.VerificationError(503, 'ตรวจสอบเพดาน OCR ไม่สำเร็จ', 'OCR_BUDGET_UNAVAILABLE');\n        if (Number(used.total) + 1 > config.trialPageLimit || Number(used.daily) + 1 > config.dailyPageLimit || Number(used.monthly) + 1 > config.monthlyPageLimit)\n            throw new playerOcr_types_1.VerificationError(429, 'ถึงเพดานการใช้งาน OCR ที่กำหนดแล้ว กรุณาติดต่อผู้ดูแลระบบ', 'OCR_BUDGET_EXCEEDED');\n        await db.query('INSERT INTO football_player_ocr_usage(id,budget_id,cache_key,page_count) VALUES($1,$2,$3,1)', [leaseId, config.budgetId, cacheKey]);\n        await db.query(`INSERT INTO football_player_ocr_cache(cache_key,state,lease_id) VALUES($1,'RUNNING',$2)\n      ON CONFLICT(cache_key) DO UPDATE SET state='RUNNING',lease_id=$2,error_code=NULL,updated_at=now()`, [cacheKey, leaseId]);\n",
+          "after": "        }\n        if (prior?.state === 'FAILED' && !force)\n            throw new playerOcr_types_1.VerificationError(409, 'การอ่านเอกสารฉบับนี้เคยไม่สำเร็จ กรุณากดยืนยันอ่านใหม่', 'OCR_PREVIOUS_FAILED');\n        if (config.quotaMode === 'limited') {\n            const usage = await db.query(`SELECT\n        COALESCE(SUM(page_count),0)::integer AS total,\n        COALESCE(SUM(page_count) FILTER (WHERE created_at AT TIME ZONE 'Asia/Bangkok' >= date_trunc('day', now() AT TIME ZONE 'Asia/Bangkok')),0)::integer AS daily,\n        COALESCE(SUM(page_count) FILTER (WHERE created_at AT TIME ZONE 'Asia/Bangkok' >= date_trunc('month', now() AT TIME ZONE 'Asia/Bangkok')),0)::integer AS monthly\n        FROM football_player_ocr_usage WHERE budget_id=$1`, [config.budgetId]);\n            const used = usage.rows[0];\n            if (!used || !['total', 'daily', 'monthly'].every(k => Number.isFinite(Number(used[k])) && Number(used[k]) >= 0))\n                throw new playerOcr_types_1.VerificationError(503, 'ตรวจสอบเพดาน OCR ไม่สำเร็จ', 'OCR_BUDGET_UNAVAILABLE');\n            if (Number(used.total) + 1 > config.trialPageLimit || Number(used.daily) + 1 > config.dailyPageLimit || Number(used.monthly) + 1 > config.monthlyPageLimit)\n                throw new playerOcr_types_1.VerificationError(429, 'ถึงเพดานการใช้งาน OCR ที่กำหนดแล้ว กรุณาติดต่อผู้ดูแลระบบ', 'OCR_BUDGET_EXCEEDED');\n        }\n        // Unlimited mode still records every paid attempt under the same budget and cache lease.\n        await db.query('INSERT INTO football_player_ocr_usage(id,budget_id,cache_key,page_count) VALUES($1,$2,$3,1)', [leaseId, config.budgetId, cacheKey]);\n        await db.query(`INSERT INTO football_player_ocr_cache(cache_key,state,lease_id) VALUES($1,'RUNNING',$2)\n      ON CONFLICT(cache_key) DO UPDATE SET state='RUNNING',lease_id=$2,error_code=NULL,updated_at=now()`, [cacheKey, leaseId]);\n"
+        }
+      ],
+      "approved_canonical_sha256": "14017501b79fd75fdca19a1de47be7f8573aae2c46d633691cf6853185da6b25",
+      "baseline_canonical_sha256": "7f2bcd765c8c625cd77b3683663230aafd50dc5a84a7b13e8326c893c8822236"
+    },
+    {
+      "module": "views/playerVerification",
+      "baseline_runtime_sha256": "a3b69963a45e9796519e25258132c0106f0689ae5c982bdcfc2028504b087597",
+      "candidate_runtime_sha256": "839bc96da81438654dd6d815401883303c13627af2dadec9d94381dd6403a7e3",
+      "runtime_edits": [
+        {
+          "before": "    function populateDetails(p){\n      const name=p.name||[p.prefix,p.firstName,p.middleName,p.lastName].filter(Boolean).join(' '),team=window.rawTeamsMap?.[p.teamId]||{};\n      el('adminPlayerDetailModalLabel').textContent='รายละเอียดข้อมูลนักกีฬา — '+(team.teamName||p.school||'ไม่ระบุทีม');\n      const values={pvGeneralName:name,pvGeneralIdCard:p.idCard,pvGeneralBirthDate:p.birthDate?displayValue('birthDate',p.birthDate):'-',modalPlayerSchool:team.teamName||p.school,modalPlayerCat:p.category||p.categories,pvTeamJerseyNo:p.jerseyNo,pvTeamJerseyName:p.jerseyName,pvTeamPosition:p.position,modalPlayerGrade:p.grade,modalPlayerGuardian:p.guardianName?(p.guardianName+(p.guardianRelation?' ('+p.guardianRelation+')':'')):(p.guardianRelation?'- ('+p.guardianRelation+')':'-'),modalPlayerPhone:p.phone,modalPlayerHW:(p.height?detailValue(p.height)+' ซม.':'-')+' / '+(p.weight?detailValue(p.weight)+' กก.':'-')};\n      for(const [id,value]of Object.entries(values))el(id).textContent=detailValue(value);\n      const docs=el('modalPlayerDocsList'),row=document.createElement('div'),label=document.createElement('span'),href=attachmentHref(p.docIdCard||p.doc_id_card);docs.replaceChildren();row.className='d-flex align-items-center justify-content-between gap-2 p-2 rounded border';label.textContent='สำเนาบัตรประชาชน / สูติบัตร';row.appendChild(label);\n",
+          "after": "    function populateDetails(p){\n      const name=p.name||[p.prefix,p.firstName,p.middleName,p.lastName].filter(Boolean).join(' '),team=window.rawTeamsMap?.[p.teamId]||{};\n      el('adminPlayerDetailModalLabel').textContent='รายละเอียดข้อมูลนักกีฬา — '+(team.teamName||p.school||'ไม่ระบุทีม');\n      el('modalPlayerName').textContent=detailValue(name);\n      const idCard=p.idCard||p.id_card;\n      el('modalPlayerIdCard').textContent=detailValue(idCard?'เลขบัตร: '+idCard:'-');\n      el('modalPlayerPos').textContent=detailValue(p.position);\n      const values={pvGeneralName:name,pvGeneralIdCard:p.idCard,pvGeneralBirthDate:p.birthDate?displayValue('birthDate',p.birthDate):'-',modalPlayerSchool:team.teamName||p.school,modalPlayerCat:p.category||p.categories,pvTeamJerseyNo:p.jerseyNo,pvTeamJerseyName:p.jerseyName,pvTeamPosition:p.position,modalPlayerGrade:p.grade,modalPlayerGuardian:p.guardianName?(p.guardianName+(p.guardianRelation?' ('+p.guardianRelation+')':'')):(p.guardianRelation?'- ('+p.guardianRelation+')':'-'),modalPlayerPhone:p.phone,modalPlayerHW:(p.height?detailValue(p.height)+' ซม.':'-')+' / '+(p.weight?detailValue(p.weight)+' กก.':'-')};\n      for(const [id,value]of Object.entries(values))el(id).textContent=detailValue(value);\n      const docs=el('modalPlayerDocsList'),row=document.createElement('div'),label=document.createElement('span'),href=attachmentHref(p.docIdCard||p.doc_id_card);docs.replaceChildren();row.className='d-flex align-items-center justify-content-between gap-2 p-2 rounded border';label.textContent='สำเนาบัตรประชาชน / สูติบัตร';row.appendChild(label);\n"
+        }
+      ],
+      "approved_canonical_sha256": "4262f07033a8e10d9a5985749544b236a9323c6d58b0c6419e2b7b1edb95c9d5",
+      "baseline_canonical_sha256": "5f7babcc9a3a1aaabd8c9c3dd41648fb9c16cffb994f020947046ec7bb9d4efd"
+    }
+  ],
+  "preserved_runtime_modules": [
+    {
+      "module": "routes/admin/adminPortal.router",
+      "baseline_runtime_sha256": "9d8af29720f6035255915448bb79412ad9af7fc416f414710152251ce7eca5fe",
+      "approved_canonical_sha256": "51d948c40426bcad60eeaa9844afd306370d458afdd2038d0e69014c6cb7d428"
+    },
+    {
+      "module": "routes/admin/adminPlayerVerification.router",
+      "baseline_runtime_sha256": "7720beb5a744cf16439f1013ce45a2b637ddc7e849114b6f889a2d2b215d3f99",
+      "approved_canonical_sha256": "68eb131f0cbe55d01df014f97c5d8a776efa7ca4c455b617bed1f7eb11109c5c"
+    }
+  ]
+}

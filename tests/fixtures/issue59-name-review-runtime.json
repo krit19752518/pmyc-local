@@ -1,0 +1,33 @@
+{
+  "issue": 59,
+  "modules": [
+    {
+      "module": "services/playerOcr.name",
+      "sha256": "077e050faa14cc2c19d3dab01003bf56414e25c9ea359e7cfb4576844173c66c"
+    },
+    {
+      "module": "services/playerOcr.parser",
+      "sha256": "09f90a19be6881b596bdc4c8a4799bf1e7f1bb5ff322952748d075c17d396666"
+    },
+    {
+      "module": "services/playerOcr.types",
+      "sha256": "208f04cae589f82a98a4964edbf3a71db916b1705781cabbdb798705d894aecf"
+    },
+    {
+      "module": "services/playerOcr.diagnostics",
+      "sha256": "3d64553e2d3a113a13a6d0c33765c88f9477a9bde86e907b57019f3ee8ae2bda"
+    },
+    {
+      "module": "services/playerVerification.service",
+      "sha256": "9b4f16ca1a8c03578c5445f2592858677a739260d902e3cee426e99292a3c987"
+    },
+    {
+      "module": "routes/admin/adminPlayerVerification.router",
+      "sha256": "8a0ca6b98e63dd75d27e3c1d1c6910d9ab04117f1602c5252fa1b6613d27ab8f"
+    },
+    {
+      "module": "views/playerVerification",
+      "sha256": "f9e242f3147a79295492574e8df4812414e4d6afedfa0b471f1e6ea42b98ce2e"
+    }
+  ]
+}

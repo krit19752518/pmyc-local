@@ -1,0 +1,260 @@
+{
+  "observed": "2026-11-09",
+  "modules": [
+    {
+      "module": "adminAuth",
+      "runtime_sha256": "fa893582233b19b9a384eea5bb3b2e76b5856f31b52d43c58121d995fcda5307",
+      "canonical_sha256": "02cc7c9a43754f7c455d9ab23111622f205362fdeefa37ca4c22bc0b21633287"
+    },
+    {
+      "module": "adminLayout",
+      "runtime_sha256": "c466c25b755dfbfc506412c0a0d0dc0bf4e9d54d69a4bbd82d28b8a2cb9c04f8",
+      "canonical_sha256": "609cdc4ffd5660454040a7392e0289e6f51e4ce91a9afb404edc8a0536cb2c42"
+    },
+    {
+      "module": "app",
+      "runtime_sha256": "2cee0c12d4ee100c105a59b3f4ef40d1a322977a08bac3f42d41ee3ac8181b16",
+      "canonical_sha256": "6260fc0d4a317a730016021770685a06b2b533317dfff25dc60d423c77c08351"
+    },
+    {
+      "module": "db",
+      "runtime_sha256": "81f55a51efa7b0764ed439d9661d65070a825d81639cfe1ec7098e2b14cc5ad9",
+      "canonical_sha256": "5af06043b6cfd936d15c5547be537205aa38241c6500fc1c785412387dbb3ec2"
+    },
+    {
+      "module": "db/initTables",
+      "runtime_sha256": "900eec43e7f90518363087927c0a336e991063a451a07a0a11e2ae92d6b33e63",
+      "canonical_sha256": "53292bfcf3f41ac6e66f13dd6cc96555631aca0eb6bc4ca742b489dfed71afd8"
+    },
+    {
+      "module": "layout",
+      "runtime_sha256": "213e59949b1762afe9f97ac168c0284506ce1ea3fb06ee053c01b1786c3180af",
+      "canonical_sha256": "f417b0ab67dc26d3298cd87fc713a2fb5ee3ab4c52faa9122b7f5f8de0356a67"
+    },
+    {
+      "module": "middleware/auditMutation.middleware",
+      "runtime_sha256": "4770b702e843f2ebb8a31ab11c94a857486855481bc655fe171755769b38df22",
+      "canonical_sha256": "b00df36c8e88bd3f75f275c078ce76a7e5e97ecdec7d4d3337c11b73fe928a32"
+    },
+    {
+      "module": "middleware/supportReportUpload",
+      "runtime_sha256": "f61ff40766cd870264a678d553b83673bc321f9c8ff24bda628f2dab73d2cc23",
+      "canonical_sha256": "1839dfa7221a30a198f98487f29593609bb23857f10140e4319b351e394f764c"
+    },
+    {
+      "module": "middleware/upload",
+      "runtime_sha256": "deb8e58c5c2eeaae1cf6b4ca12195e8645ac288ace9e20664fb0f611aa6f035d",
+      "canonical_sha256": "ede888906ea5405da6214a7a495547c6900153579a6f8824cb5b67daa0284b0f"
+    },
+    {
+      "module": "models/official.model",
+      "runtime_sha256": "4231eee6bdafcef3931b4ac910e8db57d3ee0ea5cb21b640453c5b0d96c03e35",
+      "canonical_sha256": "1b0718140e849022d3c27b16efacc632735af08b33082aae859043468691cf1b"
+    },
+    {
+      "module": "models/player.model",
+      "runtime_sha256": "caaabafc1630dc15dc357567e3622d610603f53ed3cd9ea3b7a47d70a3201976",
+      "canonical_sha256": "dedff85d1efdf20a83f240f14b9f154719999b04df68680ee8e68c43337d9449"
+    },
+    {
+      "module": "models/team.model",
+      "runtime_sha256": "2ad561d12cfb57886a9ab5b02acb5712cceb2a83d50bfb97e37250d228789176",
+      "canonical_sha256": "edd57633db4652417a095553ddb4235d3d7340e703bda60fe3ddfcdfd43373b7"
+    },
+    {
+      "module": "routes/admin/adminPlayerVerification.router",
+      "runtime_sha256": "cba11a4d1a144558b9f926bb916f791aecb21948c765857c1b04a908cc19e424",
+      "canonical_sha256": "a83b3a465188d8e58cf639c1e4b7669d6fdd42a40325a9e493d9b7aaca111f78"
+    },
+    {
+      "module": "routes/admin/adminPortal.router",
+      "runtime_sha256": "d0beea078cfee8e9d7488c16a070c7cf37b32a200f7618adb72f56cdff86c33c",
+      "canonical_sha256": "278ca21c62d3205245d73ae2b69d149ab519acb50eaa5f59a6c5a8ded2a914c1"
+    },
+    {
+      "module": "routes/admin/adminReports.router",
+      "runtime_sha256": "e3bf2535a38ee550560ea0ea5d29bda0c03806defaa07e463c1e7ac23f1f7993",
+      "canonical_sha256": "fe08793594ff6c97a79dc29dc46d2ba19d92593771c9610c529285d44d93986a"
+    },
+    {
+      "module": "routes/admin/adminTeamEdit.router",
+      "runtime_sha256": "9751fdf430e2b8e126505c1ea9ea0dc9b86f3dcfd4f814c33cda604f4301830d",
+      "canonical_sha256": "bb92ca5410eeb77dcf5e803f44d299a6f0a6be235a81747a03d39c4c590cfe05"
+    },
+    {
+      "module": "routes/api/api.router",
+      "runtime_sha256": "5dbf774bb0f65c7440aea457e7196595b0528770bf44b496c61f956588327aae",
+      "canonical_sha256": "99678b9b95631b4cdf1407c539962d486b18aa04550cf1bd012676878ec92fb0"
+    },
+    {
+      "module": "routes/phase2.router",
+      "runtime_sha256": "1e058dabb107d14c40e224cdba7a078911e05be7d9515ecc715d1ed76da14d1d",
+      "canonical_sha256": "a3345d765b24bcfa5cd516e2a8289426b543db867d00f57998348c88e3e52ba6"
+    },
+    {
+      "module": "routes/public.router",
+      "runtime_sha256": "8470927de5d9af3a50019e4ecf7c94e32a91d7fe159cea4764fcca8ad627e3e4",
+      "canonical_sha256": "36a9fc9cfe906148cf376963026a3183022d535711a2085f0fd4a9ee5c154166"
+    },
+    {
+      "module": "routes/team/teamAuth.router",
+      "runtime_sha256": "ed7388ef05ac1710a27b68887737eebc617d16b376d3cbfd39ea74a9f23409d2",
+      "canonical_sha256": "6e7e642a638413cb25bc0e239a6e11d67cc459b0046d009e61b5a07d63a9d737"
+    },
+    {
+      "module": "routes/team/teamRoster.router",
+      "runtime_sha256": "2bec27a36da906729c575dd48be94a1c09511ee580ab6c722058dda56d8f169c",
+      "canonical_sha256": "691f5c31e6dd18b7117830076d543dbe0ba9754b0d58d86251be524b6e8b0b79"
+    },
+    {
+      "module": "server",
+      "runtime_sha256": "f74ea8d2092f4cf1441b6e49894991747eb3243d7de58ce39a32c974927f54c0",
+      "canonical_sha256": "2899b8ccca7b33934fcbd8f06bc93af23a66e071c349fbccdefe7c9085f964f8"
+    },
+    {
+      "module": "services/adminSession.service",
+      "runtime_sha256": "8b22850d9055b4834fe4c73fa008ff9b08c635bd5c76efc6e60053c9cc0cde19",
+      "canonical_sha256": "1f6163745da0451119ab09739f0a1128ce93bf9c401fae1489b9d21a9f2cfd41"
+    },
+    {
+      "module": "services/auditLog.service",
+      "runtime_sha256": "c3590da899620c2fc50c15272e65f96f4df709faba4a5fb7aae8311cc6480521",
+      "canonical_sha256": "329a323e42fee0c4c661e28fb7ddf1c2629e7beab759cb5d542929402ef03126"
+    },
+    {
+      "module": "services/dbTransaction.service",
+      "runtime_sha256": "dde10620df5a7ba645f6fad9a1464c8356f67ae77168f470fae11cdb29a076c1",
+      "canonical_sha256": "7358a1a9d8cec8bf633a2557d29e0b1d1f18e6371b4adbd2551421f027e4eb16"
+    },
+    {
+      "module": "services/localRuntime.service",
+      "runtime_sha256": "b909bb6773e92f88b72130444b3d48c71fe3b9d5e262b798928172e9cf356f94",
+      "canonical_sha256": "ad9ce3ea4358620e2814c9642bee7da6119365f1da65bb35c85c9bfa384e3fec"
+    },
+    {
+      "module": "services/mailer.service",
+      "runtime_sha256": "2d1a03611a412810831db13c65c5938b52270db35fffce8535620b012b2606c8",
+      "canonical_sha256": "89521e36493905ceb21eb1462a3c4e267783572035ec15e1817496ebf51ca1fd"
+    },
+    {
+      "module": "services/phase2ProductionBackend.service",
+      "runtime_sha256": "eeaedba317e32c1a2153d9ae33556ef0559a855811f7ea7b71fef551b9c459cd",
+      "canonical_sha256": "52a3d8fffd3636e39f9200a42002b1a3d45d14bde7f2f66018031099874455e4"
+    },
+    {
+      "module": "services/phase2Runtime.service",
+      "runtime_sha256": "679d45c4981e162fa411b39da9539978faf0e04d92284ce4522ab8a91794b2e6",
+      "canonical_sha256": "acc8dbd555cdde2ce5bb42e255bea8b2db603e192afbbba7068158e609583547"
+    },
+    {
+      "module": "services/phase2Session.service",
+      "runtime_sha256": "7659b5df57f48ec660d79954f33eb021bb78188a43a4b24849564b5cd8bbf6c9",
+      "canonical_sha256": "9f6dd546b980bc547a855a3060c9c1eba1306ae63407ffdeb46aa4b877db61d3"
+    },
+    {
+      "module": "services/playerOcr.config",
+      "runtime_sha256": "f03fe7aa21652749825b0761e7ad7aaf723dd555407b525d1d7b140a59fc4400",
+      "canonical_sha256": "61be4481e3feff0b4d59555493136cc6a06c9da35d0efa40ea048799ff290ef2"
+    },
+    {
+      "module": "services/playerOcr.date",
+      "runtime_sha256": "4db131ce659c78a932f2e6c42646b606476a2f90b4cbfac98effffa3555516eb",
+      "canonical_sha256": "655dbe4f8a427580c496b2db5d98cb49b5f1be7a5c716b9c9566469ee886c762"
+    },
+    {
+      "module": "services/playerOcr.document",
+      "runtime_sha256": "f4ed60701d666db5bb4ea86d72f393180865f6786ac5a87d9e853787ef419af1",
+      "canonical_sha256": "a394532f20eb7961e8bd3afe807eadddf145214feff72a5195f1faf154b3b0b8"
+    },
+    {
+      "module": "services/playerOcr.geometry",
+      "runtime_sha256": "6f769f714e0cd62327869af80636ae48de69b454106ae5b193dd1a00d30b2628",
+      "canonical_sha256": "8722e5dc97b7f37461feaa3ba0ebaac8232f08fbce83c5fe9ec5a488d6e0ef41"
+    },
+    {
+      "module": "services/playerOcr.parser",
+      "runtime_sha256": "359fb87e8453b150f493afe4032f33aa68afbfd47156703b5305139566518ab9",
+      "canonical_sha256": "153fc385ed6afdc4a04e2d67d418ee0701292d3253a6450b741f2084d67e458d"
+    },
+    {
+      "module": "services/playerOcr.provider",
+      "runtime_sha256": "38425ebaffb18154a2a4c72322403434326c789fe86ed75d65e94cae56696607",
+      "canonical_sha256": "7bed513422814add0509253f0ce4d8a8f811e75531765565684a2ffcbbb8a648"
+    },
+    {
+      "module": "services/playerOcr.types",
+      "runtime_sha256": "2e8aa0268b7c04bc26b70dc526de3fe2d504719b0108676a2b833f21fdd54a39",
+      "canonical_sha256": "3e21e4435e6b838c179add09d604bb3e34dd4470155be4e4da38c10aee5b066e"
+    },
+    {
+      "module": "services/playerVerification.reset",
+      "runtime_sha256": "cfdb4fc6fc3898c2fd7b23b4ba22db0f52a8aac09cdf79a95f048f96b565509b",
+      "canonical_sha256": "102104923ac8e268c3ca5c0b3e80f007610f8c16c5b473d73f0dbd2241109397"
+    },
+    {
+      "module": "services/playerVerification.service",
+      "runtime_sha256": "3e7efae320c88118a98d60c11f7ab6aa8e150564af4d0f2ff6c7839298656d58",
+      "canonical_sha256": "e11642a635ac0a35da603de8782ddc5cd3bb2e8e175ea3daee2da5ea7599f96f"
+    },
+    {
+      "module": "services/teamCategory.service",
+      "runtime_sha256": "226396e4acc351ec494dbef7a2ae3c1156684dd2bb6b10214482bd0960e6a455",
+      "canonical_sha256": "9bc3d649a4c22675453e4389bc85511a4780a2023f695ac0f8a61d71c37747e9"
+    },
+    {
+      "module": "services/teamRegistrationRank.service",
+      "runtime_sha256": "a885704a4af6d47c57f281e2502e5c8767973b539a4b13010a6f4da812537889",
+      "canonical_sha256": "d3fb74a1277de3ec7488c8802eeabebc52ec1ffd7459f436022591964386ce96"
+    },
+    {
+      "module": "services/teamSession.service",
+      "runtime_sha256": "0de2dfd804c31d47e14301e361cdd85ac9d0249c7c0920d79b7f3701541d851e",
+      "canonical_sha256": "8334d7a41b2e9e2ed18db78fa664a41cee0e3be38537192f118f6aed18bec4ce"
+    },
+    {
+      "module": "supportReportWidget",
+      "runtime_sha256": "153c1db1d9bb221266ae67b55cbe676f2d9e0e43f56d22eb0056a91206f7ae20",
+      "canonical_sha256": "b202686a224e361ee926d7e2234f09f799e75438c6b8e79e8db564e6a0724ea8"
+    },
+    {
+      "module": "supportReportsPage",
+      "runtime_sha256": "f0ee6760e7c9ee1193a673cac0cf5c77b0985b621e91633b517ff86700ea8158",
+      "canonical_sha256": "9e78d03c29108f92256349dbb5003caacc7b45c480c1f9c4ebb55a1615a5146d"
+    },
+    {
+      "module": "teamLayout",
+      "runtime_sha256": "4742590c40e88abe8ca9cd218e1aa526ac0c87b0e01b14cb88a426142db24e60",
+      "canonical_sha256": "de5c357321c1aa0fdf8b62f42f5001757f75d95f0ba71f78ba7e09044458d2c9"
+    },
+    {
+      "module": "utils/bracketHelper",
+      "runtime_sha256": "29b4f5387f32b1762bbc7913e3a745c25db91ee6d0b881ca057f078d002b3b85",
+      "canonical_sha256": "188487bc17a0d7656cd66cc5f206bef5d52adbffc3c55d3081f418444abc34d9"
+    },
+    {
+      "module": "utils/helpers",
+      "runtime_sha256": "a4174da055dbdffee46779d0d731137b88187f374c1a256fff9406ae393e8bd1",
+      "canonical_sha256": "c8a625854f60967dd327e5a201c32561541059195fe50991f141f9b52a2cc671"
+    },
+    {
+      "module": "utils/statusHelper",
+      "runtime_sha256": "f625e490828fd6212334f80918d3237028201d26e83849cfe36bd1233217e7e7",
+      "canonical_sha256": "16b8f49244e2d86e78139fcac2126e4801842c15511e0bef1180bff158b2e420"
+    },
+    {
+      "module": "utils/teamArea",
+      "runtime_sha256": "c8549a406222280c346a3713d7263a86bc92c81c583d23cd0ae7a42c335514a4",
+      "canonical_sha256": "6dba1bc2ccb1f64de9ddabd3dd12214df5c1919c63f2558c39569181014d6642"
+    },
+    {
+      "module": "utils/teamCategoryState",
+      "runtime_sha256": "b31efdb6ca291c71cb6ad04c063c9876953912a8ff8f57a60e5de0e49b52ef13",
+      "canonical_sha256": "0fc906ca3cb0b2e28cb84069cbbf4cbe6b39dba48477124ab18bb4298273e729"
+    },
+    {
+      "module": "views/playerVerification",
+      "runtime_sha256": "37c7bf75251659edaa974740077ce1ab3096b018666ef3df1f42a9bd4f44007f",
+      "canonical_sha256": "77022b602cbea843537297bb18fa9cf66ef6f0765d195ae5cb76a91180659882"
+    }
+  ]
+}

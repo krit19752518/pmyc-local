@@ -1,0 +1,17 @@
+{
+  "issue": 63,
+  "scope": "Local approved SAT dashboard only; no Production deployment",
+  "modules": [
+    {
+      "module": "adminLayout",
+      "baseline_canonical_sha256": "609cdc4ffd5660454040a7392e0289e6f51e4ce91a9afb404edc8a0536cb2c42",
+      "approved_canonical_sha256": "4a979eaf935bc0b8bc7634d7ea94a171a620b05ed7c535c6ac8aa9bff7566331"
+    }
+  ],
+  "reuses_asset": {
+    "path": "public/images/lineoa-support-qr.png",
+    "sha256": "9034927c2e5fdb244ef6b580830b866f06f9154cb85303de46c3f9d42e6feeb2",
+    "width": 262,
+    "height": 248
+  }
+}

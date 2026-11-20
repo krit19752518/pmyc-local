@@ -1,0 +1,4 @@
+# DISABLED BY OWNER: retained historical schedule example; do not install/enable without a separate explicit request.
+# PMYC issue72: daily registration snapshot, server timezone +0700 (Asia/Bangkok).
+# Enable only after Gate B bootstrap/HTTP checks; stdout/stderr stay in private app log.
+# 0 23 * * * (umask 077; cd /home/zbpzpszw/football_app/football && /usr/bin/timeout --verbose --signal=TERM --kill-after=10s 120s /home/zbpzpszw/football_app/football/.runtime-deps/issue55-iapp-20261109/node-football /home/zbpzpszw/football_app/football/.runtime/registration-statistics/run.cjs) >> /home/zbpzpszw/football_app/football/.runtime/registration-statistics/refresh.log 2>&1

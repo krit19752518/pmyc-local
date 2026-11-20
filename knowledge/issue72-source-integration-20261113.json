@@ -1,0 +1,430 @@
+{
+  "record_kind": "accepted_feature_source_integration",
+  "date": "2026-11-13",
+  "repository": "krit19752518/pmyc-football",
+  "branch": "work/issue72-accepted-on-main",
+  "base": "799769d789391e276d868ccb3f2701e11477105e",
+  "accepted_source": "9f09966c96515dc2783241ac64b9caafc83f06fe",
+  "source_base": "56a034b6424972a7967981e025e6e7f0ee154b93",
+  "original_source_range_paths": 52,
+  "owner_acceptance": "https://github.com/krit19752518/pmyc-football/issues/72#issuecomment-6845290798",
+  "issue72": "closed/completed; not reopened by integration",
+  "import_policy": "Committed allowlisted source only; original SQL deletions not imported; dist rebuilt from TypeScript",
+  "overlapping_knowledge_merges": [
+    "knowledge/README.md",
+    "knowledge/incident-2026-11-09-local-runtime-git-parity.md",
+    "knowledge/test_search_incidents.py"
+  ],
+  "intentional_nonruntime_difference": "Historical cron entry is commented out to reflect disabled scheduling; no job installed/enabled",
+  "current_contract": {
+    "definition": "registered-entitlements-excluding-cancelled/v2",
+    "public_includes_cancelled": false,
+    "admin_default_includes_cancelled": true,
+    "statistics_menu": true,
+    "homepage_summary_actions": false,
+    "cron": "disabled",
+    "google_sheet": "deferred"
+  },
+  "recorded_accepted_layout_sha256": "42682cfe046e774e31ecc16c5f739b2b115f0c5b4a2396ced4d7bc59c251bfa8",
+  "preserved_old_uat": "22ddb3fe89508765ef175592c66db3394025d7f4; synthetic4573 acceptance retained",
+  "historical_recovery_source_patch_sha256": "619428351d86d567024285e02d843aa5ff90c0ff758d98487424e83fc9ed9cf9",
+  "validation": {
+    "checkedAtUtc": "2026-11-13T06:30:18.451367+00:00",
+    "build": "PASS; dist generated with npm run build",
+    "focusedTests": {
+      "suites": 5,
+      "tests": 32,
+      "failed": 0
+    },
+    "fullTests": {
+      "suites": 66,
+      "tests": 1028,
+      "failed": 0
+    },
+    "knowledgeTests": {
+      "passed": 46,
+      "failed": 0
+    },
+    "completeGeneratedJsComparison": {
+      "checked": 63,
+      "exactMatches": 63,
+      "reference": "9f09966c96515dc2783241ac64b9caafc83f06fe"
+    },
+    "changedDistPathsExactlyExpected": 11,
+    "sourceBaseVsGithubBaseApplicationTrees": [
+      {
+        "path": "src",
+        "equal": true
+      },
+      {
+        "path": "dist",
+        "equal": true
+      },
+      {
+        "path": "scripts",
+        "equal": true
+      },
+      {
+        "path": "tests",
+        "equal": true
+      },
+      {
+        "path": "sql",
+        "equal": true
+      },
+      {
+        "path": "public",
+        "equal": true
+      },
+      {
+        "path": "phase2",
+        "equal": true
+      },
+      {
+        "path": "assets",
+        "equal": true
+      },
+      {
+        "path": "config",
+        "equal": true
+      }
+    ],
+    "recordedMenuArtifactSha256Matched": true,
+    "newRelativeLinksChecked": 11,
+    "newMissingRelativeLinks": 0,
+    "jsonParse": "PASS",
+    "diffWhitespace": "PASS",
+    "packageLockAndGovernancePreserved": true,
+    "activeCronSourceEntries": 0,
+    "secretSignatureReview": {
+      "privateKeyOrGithubTokenFlags": 0,
+      "passwordBearingUrls": "One synthetic test fixture only; broad-regex cross-literal false positive reconciled; no actual credentials copied"
+    },
+    "databaseTests": "Temporary synthetic PostgreSQL clusters; inherited app DB/OCR settings removed and unused default DB directed to a closed loopback port",
+    "productionOrServiceActions": [],
+    "freshProductionOrBrowserAcceptance": "Not performed; prior owner acceptance is attributed separately"
+  },
+  "production_operations": [],
+  "service_actions": [],
+  "operational_data_copied": false,
+  "publication": "not pushed; draft prepared after validation",
+  "accepted_generated_artifacts": [
+    {
+      "path": "dist/app.js",
+      "sha256": "0f170025b66f0b4f31a8b671ec90821ce496521e247ab57617978a525204e00f",
+      "bytes": 12529
+    },
+    {
+      "path": "dist/jobs/refreshRegistrationStatistics.js",
+      "sha256": "5140e5f0503f7163086cf205cd5a8f3ce18880011383995d8865ccd04e17eb45",
+      "bytes": 971
+    },
+    {
+      "path": "dist/layout.js",
+      "sha256": "42682cfe046e774e31ecc16c5f739b2b115f0c5b4a2396ced4d7bc59c251bfa8",
+      "bytes": 8873
+    },
+    {
+      "path": "dist/routes/admin/adminReports.router.js",
+      "sha256": "0ee0dc6c9d4b00a57acdce748844076a5bd38c4583b77f4561342e351fcc19f9",
+      "bytes": 75376
+    },
+    {
+      "path": "dist/routes/registrationStatistics.router.js",
+      "sha256": "92dadc554aa9d3d265293c45752ca3c16e0d92333c15fa84f913664ac45ee79e",
+      "bytes": 3175
+    },
+    {
+      "path": "dist/services/registrationStatistics.export.js",
+      "sha256": "5497ce3ca5a5704730c8171f794fab8a0fa89acfece2b96b72b4217a22c404b0",
+      "bytes": 4918
+    },
+    {
+      "path": "dist/services/registrationStatistics.refresh.js",
+      "sha256": "d766efb6daa3bb7d253a5843db8e5e4cbf805433aac17a3e234829f84abfbd4a",
+      "bytes": 4018
+    },
+    {
+      "path": "dist/services/registrationStatistics.registry.js",
+      "sha256": "109d97b78d3233826b25a41785116a36842bdfc2618c50a4b3b3ea9e3814c8ee",
+      "bytes": 58948
+    },
+    {
+      "path": "dist/services/registrationStatistics.service.js",
+      "sha256": "9531352943fc42108c520374e4c8724b889bce0f33e464e724eda360b26737e0",
+      "bytes": 8470
+    },
+    {
+      "path": "dist/services/registrationStatistics.store.js",
+      "sha256": "3dbf0654cc69a9b3144d36a068156f0dba84ee8fedcc7868dde783c8691676e1",
+      "bytes": 5170
+    },
+    {
+      "path": "dist/views/registrationStatistics.js",
+      "sha256": "e322a4624af65b7606ef03c3ce6dad184e2e4af7c8fa3f505664c0d1155bb064",
+      "bytes": 3035
+    }
+  ],
+  "accepted_source_path_hashes": [
+    {
+      "path": "dist/app.js",
+      "sha256": "0f170025b66f0b4f31a8b671ec90821ce496521e247ab57617978a525204e00f",
+      "bytes": 12529
+    },
+    {
+      "path": "dist/jobs/refreshRegistrationStatistics.js",
+      "sha256": "5140e5f0503f7163086cf205cd5a8f3ce18880011383995d8865ccd04e17eb45",
+      "bytes": 971
+    },
+    {
+      "path": "dist/layout.js",
+      "sha256": "42682cfe046e774e31ecc16c5f739b2b115f0c5b4a2396ced4d7bc59c251bfa8",
+      "bytes": 8873
+    },
+    {
+      "path": "dist/routes/admin/adminReports.router.js",
+      "sha256": "0ee0dc6c9d4b00a57acdce748844076a5bd38c4583b77f4561342e351fcc19f9",
+      "bytes": 75376
+    },
+    {
+      "path": "dist/routes/registrationStatistics.router.js",
+      "sha256": "92dadc554aa9d3d265293c45752ca3c16e0d92333c15fa84f913664ac45ee79e",
+      "bytes": 3175
+    },
+    {
+      "path": "dist/services/registrationStatistics.export.js",
+      "sha256": "5497ce3ca5a5704730c8171f794fab8a0fa89acfece2b96b72b4217a22c404b0",
+      "bytes": 4918
+    },
+    {
+      "path": "dist/services/registrationStatistics.refresh.js",
+      "sha256": "d766efb6daa3bb7d253a5843db8e5e4cbf805433aac17a3e234829f84abfbd4a",
+      "bytes": 4018
+    },
+    {
+      "path": "dist/services/registrationStatistics.registry.js",
+      "sha256": "109d97b78d3233826b25a41785116a36842bdfc2618c50a4b3b3ea9e3814c8ee",
+      "bytes": 58948
+    },
+    {
+      "path": "dist/services/registrationStatistics.service.js",
+      "sha256": "9531352943fc42108c520374e4c8724b889bce0f33e464e724eda360b26737e0",
+      "bytes": 8470
+    },
+    {
+      "path": "dist/services/registrationStatistics.store.js",
+      "sha256": "3dbf0654cc69a9b3144d36a068156f0dba84ee8fedcc7868dde783c8691676e1",
+      "bytes": 5170
+    },
+    {
+      "path": "dist/views/registrationStatistics.js",
+      "sha256": "e322a4624af65b7606ef03c3ce6dad184e2e4af7c8fa3f505664c0d1155bb064",
+      "bytes": 3035
+    },
+    {
+      "path": "knowledge/README.md",
+      "sha256": "3610600927969c717b5b21380791878d83de133c691dfe9894881d94921954dc",
+      "bytes": 10023
+    },
+    {
+      "path": "knowledge/incident-2026-11-09-local-runtime-git-parity.md",
+      "sha256": "abbc8e4307919cb61ca7b48e1830a21d4405f85b93baa191ea9f50a83d07a775",
+      "bytes": 5779
+    },
+    {
+      "path": "knowledge/incident-2026-11-12-public-statistics-data-contract.md",
+      "sha256": "bc74482e624616353d21c4b7cee05248bb4422abbb4b77a44a0267cd6673761e",
+      "bytes": 8280
+    },
+    {
+      "path": "knowledge/registration-statistics/QA.md",
+      "sha256": "1ea172495a305855e9d89f090667ea45ba916efe23d503ba074893da53736b2a",
+      "bytes": 8648
+    },
+    {
+      "path": "knowledge/registration-statistics/README.md",
+      "sha256": "afe68652bfa26b8adde9cc3dea0c1ecdc04a04028501c68f5a4c316b50faf2c7",
+      "bytes": 12096
+    },
+    {
+      "path": "knowledge/registration-statistics/reference-LICENSE.txt",
+      "sha256": "ee6c55a83db42303b8131d3b16cc492f9df191883dd91cb345aa583e4b0b0bc1",
+      "bytes": 1075
+    },
+    {
+      "path": "knowledge/registration-statistics/reference-SOURCES.md",
+      "sha256": "c740209caabeb35501955c0b400e154eee07ce9a66eabceae469369589ec5f9f",
+      "bytes": 2589
+    },
+    {
+      "path": "knowledge/test_search_incidents.py",
+      "sha256": "3e08eb80114a0dc0faade6b3fcab86b5de66fc910c601652b63c37edc3f476f9",
+      "bytes": 15619
+    },
+    {
+      "path": "public/assets/registration-statistics/NotoSansThai-OFL.txt",
+      "sha256": "96ac951c8caddd87d8a66fe0d02342127696131d3e935ce4a936dc68cf032e33",
+      "bytes": 4379
+    },
+    {
+      "path": "public/assets/registration-statistics/NotoSansThai.ttf",
+      "sha256": "5a1c559bb539583c8a1fd99d1c5b9491e5e14478c9cd2bd0970d5c3096cc9ef8",
+      "bytes": 218652
+    },
+    {
+      "path": "public/assets/registration-statistics/app.js",
+      "sha256": "a94f7976b61054ebd021a453c8ca988b6a61141cf84f013f3376c7c8874669d3",
+      "bytes": 34577
+    },
+    {
+      "path": "public/assets/registration-statistics/coverage.css",
+      "sha256": "118a76560acf797d04ce1d1e3942d1c158d1356d512624e0d07c88cbe0eb4918",
+      "bytes": 7682
+    },
+    {
+      "path": "public/assets/registration-statistics/home.css",
+      "sha256": "fd9963a42b54554678886962821ec386a25f380b711d633e35501c4e80ee4a96",
+      "bytes": 1499
+    },
+    {
+      "path": "public/assets/registration-statistics/home.js",
+      "sha256": "3626f5eefff378009a2635f4502380c68a2bd35efc7ccbbb6ae486d528650869",
+      "bytes": 1848
+    },
+    {
+      "path": "public/assets/registration-statistics/integration.css",
+      "sha256": "d5422852bafa5bbb0956db29c8d49f1aff443013a4bff8b31ba3e91f61757a46",
+      "bytes": 833
+    },
+    {
+      "path": "public/assets/registration-statistics/styles.css",
+      "sha256": "c28b453b19ad667f9814d00cb05b97f90f2738982eff75efeecea954327a497a",
+      "bytes": 18081
+    },
+    {
+      "path": "scripts/preview-registration-statistics.cjs",
+      "sha256": "63a258c37fbc94842be6b1ce26a94e3a7e3cc2b61ce8814825d42df0362e70d9",
+      "bytes": 1920
+    },
+    {
+      "path": "scripts/refresh-registration-statistics-local.cjs",
+      "sha256": "fddd90dcbbe7fc89253274ba569d76f2ee9d9ce28ab977c233d38233e565efce",
+      "bytes": 2016
+    },
+    {
+      "path": "scripts/registration-statistics/production-crontab.entry",
+      "sha256": "143ba8a9e16d36079fdab54f0f214278baa5cb46fdecf7ca4b8e504c8d679472",
+      "bytes": 557
+    },
+    {
+      "path": "scripts/registration-statistics/production-runner.cjs",
+      "sha256": "b9aa7a2ff48abc6a89a2b96d034ec93d561581b72f7cb1eac9bd368232b40206",
+      "bytes": 2393
+    },
+    {
+      "path": "src/app.ts",
+      "sha256": "3d6812d687bb678e098f369dc5e0d4eeb5317bdc0e2c05df408485494ae30a0e",
+      "bytes": 10193
+    },
+    {
+      "path": "src/jobs/refreshRegistrationStatistics.ts",
+      "sha256": "44f22f4d5a7f2a6d7eb4aa7c3148996b9c7ab54ce8b74fa79de2edcd09dfb818",
+      "bytes": 723
+    },
+    {
+      "path": "src/layout.ts",
+      "sha256": "d0f8b50550d6f4d6e921ffabfe7406376a1d33581d6defb4ec074d74df3c6e6f",
+      "bytes": 8821
+    },
+    {
+      "path": "src/routes/admin/adminReports.router.ts",
+      "sha256": "1a49fe74e181dcf380aa20639c3ce93696140a9888f29a44669941b3af43de49",
+      "bytes": 74738
+    },
+    {
+      "path": "src/routes/registrationStatistics.router.ts",
+      "sha256": "fe9d1ba8987dd36bf4e4aa99e08f836e5234250e467551deb25ba536bfbddb40",
+      "bytes": 2423
+    },
+    {
+      "path": "src/services/registrationStatistics.export.ts",
+      "sha256": "016ce71eb272d083a8343c7f2bd83792567b86e856dcb704ebb2c939dea4b307",
+      "bytes": 4534
+    },
+    {
+      "path": "src/services/registrationStatistics.refresh.ts",
+      "sha256": "6a9d24b5951bacf65b026ed0ab12bfcb8ce3dfa9309189e5eb2699cd4706815c",
+      "bytes": 3659
+    },
+    {
+      "path": "src/services/registrationStatistics.registry.ts",
+      "sha256": "06dcd91d7ab3cf94a32159e4b005e18231792dde9e197d03a208aa266cbfa44e",
+      "bytes": 52633
+    },
+    {
+      "path": "src/services/registrationStatistics.service.ts",
+      "sha256": "cfc4af34d488550e6d531b0d2b1eb69961cdfe670b9346b29fabcf78c7e433a8",
+      "bytes": 8193
+    },
+    {
+      "path": "src/services/registrationStatistics.store.ts",
+      "sha256": "7d1901cd495e3ddfc3f86541449b7b4fc292d5f907d9d039005798c6f77a26c3",
+      "bytes": 3969
+    },
+    {
+      "path": "src/views/registrationStatistics.ts",
+      "sha256": "9fc95a0e38e619763756161cb6a13f4930590fd0fbdceef99d6c52a64f3286ca",
+      "bytes": 2898
+    },
+    {
+      "path": "tests/fixtures/issue72-approved-source-edits.json",
+      "sha256": "7fefffb7011ff5bff10c04015a60c2bc6fc489298fcdc1bee927ef016bb0eb93",
+      "bytes": 2263
+    },
+    {
+      "path": "tests/fixtures/issue72-approved-statistics.json",
+      "sha256": "2b4af18fe2d35c2d234e7d9afdb408c3fcca2e26979859c4da9acc6874e5017d",
+      "bytes": 166866
+    },
+    {
+      "path": "tests/helpers/issue72Preservation.cjs",
+      "sha256": "b7622aee4a08119d921aa13eb8e4c1967310aed39ddb2db212d6efd390a53aa2",
+      "bytes": 587
+    },
+    {
+      "path": "tests/local-statistics-refresh.test.ts",
+      "sha256": "1a693b724cc763396517e8f4516c618fe87866c622aa538b29e3215082303841",
+      "bytes": 1656
+    },
+    {
+      "path": "tests/production-parity.test.ts",
+      "sha256": "a257e3db7ac24a20aadc99b8fc0d5473b8dd5dbd0a2973b7b820b77937efe90f",
+      "bytes": 13157
+    },
+    {
+      "path": "tests/registration-statistics-client.test.ts",
+      "sha256": "ed8b568306e124718e6dbd98b1c1fbc41b1624566badbaf97b377c9d9490fe99",
+      "bytes": 5157
+    },
+    {
+      "path": "tests/registration-statistics-postgres.test.ts",
+      "sha256": "0a36d437e6337cf327b488f1546b44f214f394edc466d55e49f97c98030ba9a3",
+      "bytes": 5100
+    },
+    {
+      "path": "tests/registration-statistics-production-runner.test.ts",
+      "sha256": "6fcb3ac60e97a6aa2dcd3fce5b16e7d037d2f998183b62ee7e651ed0f465e94e",
+      "bytes": 4462
+    },
+    {
+      "path": "tests/registration-statistics.test.ts",
+      "sha256": "193da1c80c4c5ca86e1a315236f2791ee8ce7505d8d4f34d84df737a23ce1a6e",
+      "bytes": 20130
+    },
+    {
+      "path": "tests/runtime-source-preservation.test.ts",
+      "sha256": "f903c3bfa6d1e9d4c84047a56ba5968fa1c015b7aa3ad4e89a9d5cb530103b1f",
+      "bytes": 5095
+    }
+  ]
+}

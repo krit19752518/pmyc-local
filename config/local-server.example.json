@@ -1,0 +1,8 @@
+{
+  "databaseUrl": "postgresql://LOCAL_USER:LOCAL_PASSWORD@127.0.0.1:5432/my_office_db",
+  "ocrEnabled": false,
+  "env": {
+    "ADMIN_SESSION_SECRET": "replace-with-a-local-session-secret",
+    "TEAM_SESSION_SECRET": "replace-with-a-local-session-secret"
+  }
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "module": "app",
+    "before": "import { publicRouter } from './routes/public.router';",
+    "after": "import { publicRouter } from './routes/public.router';\nimport { createRegistrationStatisticsRouter } from './routes/registrationStatistics.router';"
+  },
+  {
+    "module": "app",
+    "before": "app.use(publicRouter);",
+    "after": "app.use(createRegistrationStatisticsRouter());\napp.use(publicRouter);"
+  },
+  {
+    "module": "routes/admin/adminReports.router",
+    "before": "import { getTeamDistrictName, normalizeProvince } from '../../utils/teamArea';",
+    "after": "import { getTeamDistrictName, normalizeProvince } from '../../utils/teamArea';\nimport { registeredEntitlements, sum as sumEntitlements } from '../../services/registrationStatistics.service';"
+  },
+  {
+    "module": "routes/admin/adminReports.router",
+    "before": "  let u14Teams = 0;\n  let u16Teams = 0;\n  let u18Teams = 0;\n  let multiCatTeams = 0;\n\n  registeredTeams.forEach((t: any) => {\n    const catsStr = (t.categories || '').toUpperCase();\n    const isU14 = catsStr.includes('U14');\n    const isU16 = catsStr.includes('U16');\n    const isU18 = catsStr.includes('U18');\n\n    if (isU14) u14Teams += 1;\n    if (isU16) u16Teams += 1;\n    if (isU18) u18Teams += 1;\n\n    let catCount = 0;\n    if (isU14) catCount++;\n    if (isU16) catCount++;\n    if (isU18) catCount++;\n    if (catCount > 1) multiCatTeams += 1;\n  });",
+    "after": "  const entitlements = registeredEntitlements(registeredTeams);\n  const [u14Teams, u16Teams, u18Teams] = sumEntitlements(entitlements);\n  const multiCatTeams = entitlements.filter(t => t.ages.filter(Boolean).length > 1).length;"
+  },
+  {
+    "module": "layout",
+    "before": "          <li class=\"nav-item dropdown\">\n            <a class=\"nav-link dropdown-toggle ${activeNav === 'register' ? 'active' : ''}\"",
+    "after": "          <li class=\"nav-item\">\n            <a class=\"nav-link ${activeNav === 'statistics' ? 'active' : ''}\" href=\"${base}/registration-statistics.php\">ข้อมูลสถิติการสมัคร</a>\n          </li>\n          <li class=\"nav-item dropdown\">\n            <a class=\"nav-link dropdown-toggle ${activeNav === 'register' ? 'active' : ''}\""
+  }
+]

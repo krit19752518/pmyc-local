@@ -1,0 +1,10 @@
+[
+  {
+    "module": "layout",
+    "text": "${activeNav === 'home' && content.includes('id=\"home-statistics-summary\"') ? `<script defer src=\"${base}/assets/registration-statistics/home.js?v=issue89-home-1\"></script>` : ''}\n"
+  },
+  {
+    "module": "routes/public.router",
+    "text": "\n    <section class=\"card border-0 shadow-sm p-4 mx-auto mb-4 rounded-4\" style=\"max-width: 900px;\" aria-labelledby=\"home-statistics-title\">\n      <h2 id=\"home-statistics-title\" class=\"h4 fw-bold text-navy\">ข้อมูลสถิติการสมัคร</h2>\n      <div class=\"row g-3 my-2\">\n        <div class=\"col-12 col-md-4\"><strong id=\"home-statistics-total\" class=\"fs-2\">—</strong><div>รายการทีม–รุ่นที่สมัคร</div></div>\n        <div class=\"col-6 col-md-4\"><strong id=\"home-statistics-provinces\" class=\"fs-2\">—</strong><div>จังหวัดทั้งหมด</div></div>\n        <div class=\"col-6 col-md-4\"><strong id=\"home-statistics-districts\" class=\"fs-2\">—</strong><div>อำเภอ/เขตทั้งหมด</div></div>\n      </div>\n      <p id=\"home-statistics-summary\" role=\"status\" aria-live=\"polite\">กำลังโหลดข้อมูลสถิติการสมัคร…</p>\n      <a id=\"home-statistics-gaps\" href=\"${base}/registration-statistics.php#stats?level=district&amp;status=zero\">ดูพื้นที่ที่ยังไม่มีทีมสมัคร →</a>\n      <a class=\"mt-2\" href=\"${base}/registration-statistics.php\">ดูข้อมูลสถิติการสมัครทั้งหมด →</a>\n    </section>\n"
+  }
+]

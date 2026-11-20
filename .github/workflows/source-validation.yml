@@ -1,0 +1,106 @@
+name: Football source validation
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: football-source-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    if: github.repository == 'krit19752518/pmyc-football'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      NODE_OPTIONS: --max-old-space-size=6144
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+      PHASE2_TEST_PG_BIN: /usr/lib/postgresql/18/bin
+      PHASE2_PHP_BINARY: /usr/bin/php
+    steps:
+      - name: Checkout exact source without operational directories
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/uploads/
+            !/.runtime/
+            !/.aws/
+            !/.codex/
+            !/.agents/
+            !/.env*
+      - name: Record tested SHA and tree identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          HEAD_TREE="$(git rev-parse 'HEAD^{tree}')"
+          {
+            echo "### Football Source Validation Identity"
+            echo "- Event: \`${{ github.event_name }}\`"
+            echo "- Ref: \`${{ github.ref }}\`"
+            echo "- Tested SHA (checkout HEAD): \`${HEAD_SHA}\`"
+            echo "- Tested tree: \`${HEAD_TREE}\`"
+            echo "- Event github.sha: \`${{ github.sha }}\`"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Set up Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install disposable fixture tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo timedatectl set-timezone Asia/Bangkok
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-18 php-cli php-pgsql php-mbstring
+          "$PHASE2_TEST_PG_BIN/initdb" --version
+          php -r 'exit(extension_loaded("pdo_pgsql") ? 0 : 1);'
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build source and verify generated artifact parity (including untracked)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          git diff --exit-code -- dist
+          UNTRACKED_DIST="$(git status --porcelain=v1 --untracked-files=all -- dist)"
+          if [ -n "${UNTRACKED_DIST}" ]; then
+            echo "ERROR: Untracked or dirty generated files in dist/:"
+            echo "${UNTRACKED_DIST}"
+            exit 1
+          fi
+      - name: Full suite including disposable PostgreSQL
+        run: npm test -- --runInBand --json --outputFile=${{ runner.temp }}/football-source-jest.json
+      - name: Incident retrieval and Python tooling tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 knowledge/test_search_incidents.py
+          if compgen -G "tests/test_*.py" > /dev/null; then
+            python3 -m unittest discover -s tests -p "test_*.py" -v
+          fi
+      - name: Preserve test summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: football-source-jest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/football-source-jest.json
+          if-no-files-found: ignore
+          retention-days: 14

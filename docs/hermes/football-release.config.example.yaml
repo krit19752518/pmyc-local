@@ -1,0 +1,25 @@
+# TEMPLATE ONLY: replace cwd with the approved local evidence workspace.
+# No SSH/DB/browser credentials or standing Production authority are included.
+model:
+  default: gpt-6.1-sol
+  provider: openai-codex
+  base_url: https://chatgpt.com/backend-api/codex
+toolsets:
+  - terminal
+  - file
+  - todo
+  - memory
+  - skills
+  - clarify
+max_concurrent_sessions: 1
+terminal:
+  backend: local
+  cwd: TBD_APPROVED_LOCAL_RELEASE_WORKSPACE
+  timeout: 60
+  credential_files: []
+  env_passthrough: []
+approvals:
+  mode: manual
+security:
+  tirith_enabled: true
+  tirith_fail_open: false

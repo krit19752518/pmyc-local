@@ -1,0 +1,21 @@
+{
+  "issue": 66,
+  "scope": "SAT team roster status gating and shared AI player details modal",
+  "modules": [
+    {
+      "module": "routes/admin/adminPortal.router",
+      "baseline_canonical_sha256": "278ca21c62d3205245d73ae2b69d149ab519acb50eaa5f59a6c5a8ded2a914c1",
+      "approved_canonical_sha256": "5f14729693adc98881308cf4760191c8aeaac5d6b0778f843d1d0861f1b7d65e"
+    },
+    {
+      "module": "routes/admin/adminPlayerVerification.router",
+      "baseline_canonical_sha256": "f787dc10a63826bd8bf79966176e05472e24a16a2cbb0329aab7d24fff16f806",
+      "approved_canonical_sha256": "77bf992bf098e13e775b4f1933e73108c5016d85d4429028c5e3acfb8f4ebe05"
+    },
+    {
+      "module": "views/playerVerification",
+      "baseline_canonical_sha256": "43028b9068dc36568f57578847acfeaa3787029368354f08a5cec68492d0c41b",
+      "approved_canonical_sha256": "6685b2d5e22002854c55bb684f85f0e4862b37bc7472efba2a25bfd869793e09"
+    }
+  ]
+}

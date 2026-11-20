@@ -1,0 +1,17 @@
+{
+  "issue": 62,
+  "scope": "Local approved dashboard-only support QR replacement; no Production deployment",
+  "modules": [
+    {
+      "module": "teamLayout",
+      "baseline_canonical_sha256": "de5c357321c1aa0fdf8b62f42f5001757f75d95f0ba71f78ba7e09044458d2c9",
+      "approved_canonical_sha256": "a8efe085bf548e80476787efb2a28ce07079dd26c71626fa654de23df533fa61"
+    }
+  ],
+  "asset": {
+    "path": "public/images/lineoa-support-qr.png",
+    "sha256": "9034927c2e5fdb244ef6b580830b866f06f9154cb85303de46c3f9d42e6feeb2",
+    "width": 262,
+    "height": 248
+  }
+}

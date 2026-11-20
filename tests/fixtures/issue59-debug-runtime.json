@@ -1,0 +1,21 @@
+{
+  "issue": 59,
+  "modules": [
+    {
+      "module": "services/playerOcr.provider",
+      "sha256": "4a48a1ef60ef51c9bad235c90b6f4d96d77c06697f9ec159b5dc34b75f2fc83b"
+    },
+    {
+      "module": "services/playerOcr.debug",
+      "sha256": "9264b5a26af57028ea8c0f747ab1814dc76a50023fe8d8006ebc4ae8fceca15e"
+    },
+    {
+      "module": "services/playerOcr.diagnostics",
+      "sha256": "64a478d8c1f68936d53181b15ce781f31184fee2e470713c0d28c43faaa59f83"
+    },
+    {
+      "module": "routes/admin/adminPlayerVerification.router",
+      "sha256": "57509ceb79c6db6b0775a06b5c3c4dec1a0ed15cffa729dd29ae2787de4ad908"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "basis": "Read-only checksummed Production runtime, 2026-11-09; no application data",
+  "modules": [
+    {
+      "module": "routes/admin/adminPortal.router",
+      "runtime_sha256": "9768c1f05bcc481e500c34dbee376b592f49f111538fbfa61e802d4361b09f15",
+      "canonical_sha256": "bb4e9db92fcbd67bc65909c7f9ed2f06d15467e9d322ed85e8eb02be63151a77"
+    },
+    {
+      "module": "utils/teamArea",
+      "runtime_sha256": "c8549a406222280c346a3713d7263a86bc92c81c583d23cd0ae7a42c335514a4",
+      "canonical_sha256": "6dba1bc2ccb1f64de9ddabd3dd12214df5c1919c63f2558c39569181014d6642"
+    },
+    {
+      "module": "services/teamCategory.service",
+      "runtime_sha256": "226396e4acc351ec494dbef7a2ae3c1156684dd2bb6b10214482bd0960e6a455",
+      "canonical_sha256": "9bc3d649a4c22675453e4389bc85511a4780a2023f695ac0f8a61d71c37747e9"
+    },
+    {
+      "module": "services/teamRegistrationRank.service",
+      "runtime_sha256": "a885704a4af6d47c57f281e2502e5c8767973b539a4b13010a6f4da812537889",
+      "canonical_sha256": "d3fb74a1277de3ec7488c8802eeabebc52ec1ffd7459f436022591964386ce96"
+    },
+    {
+      "module": "utils/teamCategoryState",
+      "runtime_sha256": "b31efdb6ca291c71cb6ad04c063c9876953912a8ff8f57a60e5de0e49b52ef13",
+      "canonical_sha256": "0fc906ca3cb0b2e28cb84069cbbf4cbe6b39dba48477124ab18bb4298273e729"
+    },
+    {
+      "module": "utils/statusHelper",
+      "runtime_sha256": "f625e490828fd6212334f80918d3237028201d26e83849cfe36bd1233217e7e7",
+      "canonical_sha256": "16b8f49244e2d86e78139fcac2126e4801842c15511e0bef1180bff158b2e420"
+    }
+  ]
+}

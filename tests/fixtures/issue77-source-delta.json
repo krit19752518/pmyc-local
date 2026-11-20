@@ -1,0 +1,31 @@
+{
+  "issue": 77,
+  "base": "20a947cf10e43b805e65336f35db085bc225d3bd",
+  "modules": [
+    {
+      "module": "routes/admin/adminReports.router",
+      "baseline_sha256": "1a49fe74e181dcf380aa20639c3ce93696140a9888f29a44669941b3af43de49"
+    },
+    {
+      "module": "services/registrationStatistics.service",
+      "baseline_sha256": "cfc4af34d488550e6d531b0d2b1eb69961cdfe670b9346b29fabcf78c7e433a8"
+    }
+  ],
+  "edits": [
+    {
+      "module": "routes/admin/adminReports.router",
+      "before": "  const entitlements = registeredEntitlements(registeredTeams);\n",
+      "after": "  const entitlements = registeredEntitlements(registeredTeams, { includeCancelled: false });\n"
+    },
+    {
+      "module": "routes/admin/adminReports.router",
+      "before": "      ทำให้ผลรวมสิทธิ์การสมัครทุกรุ่นรวมกัน (<strong>${totalCategoryEntries.toLocaleString()} รายการ</strong>) มีจำนวนมากกว่าสถาบันทีมทั้งหมดในระบบ (<strong>${totalTeams.toLocaleString()} ทีม</strong>)\n",
+      "after": "      ยอดส่งแข่งรวม (<strong>${totalCategoryEntries.toLocaleString()} รายการ</strong>) นับเฉพาะรุ่นที่ยังไม่ยกเลิกการสมัคร โดยไม่นับรุ่นที่ยกเลิกการสมัคร\n      ส่วนจำนวนสถาบัน/ทีมทั้งหมดในระบบ (<strong>${totalTeams.toLocaleString()} ทีม</strong>) รวมบัญชีทีมที่ยกเลิกการสมัครทุกรุ่นแล้วด้วย\n"
+    },
+    {
+      "module": "services/registrationStatistics.service",
+      "before": "/** Admin retains cumulative enrollment; the public report explicitly excludes cancelled ages. */\n",
+      "after": "/** Cumulative enrollment is the default; active-registration reports explicitly opt out. */\n"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "issue": 60,
+  "modules": [
+    {
+      "module": "services/playerVerification.service",
+      "baseline_canonical_sha256": "9b4f16ca1a8c03578c5445f2592858677a739260d902e3cee426e99292a3c987",
+      "approved_canonical_sha256": "35a14ef74807ee590ea4a9328eb107c73af0ba19e92994e97a9ccba514aa5f66"
+    }
+  ]
+}

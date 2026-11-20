@@ -1,0 +1,24 @@
+{
+  "scope": "Dev-only TLS, pool budget and email suppression; remove legacy embedded SMTP key",
+  "baseline_source_sha": "6c791f9ec300bcfba9f15cef1c98da757ec15051",
+  "modules": [
+    {
+      "module": "db",
+      "baseline_canonical_sha256": "5af06043b6cfd936d15c5547be537205aa38241c6500fc1c785412387dbb3ec2",
+      "approved_canonical_sha256": "533349820a7d5e4ab54a3d4a594c9a22bbbb4e059989de3793d26f3096b11982",
+      "historical_contract": "5af06043b6cfd936d15c5547be537205aa38241c6500fc1c785412387dbb3ec2"
+    },
+    {
+      "module": "services/phase2Runtime.service",
+      "baseline_canonical_sha256": "acc8dbd555cdde2ce5bb42e255bea8b2db603e192afbbba7068158e609583547",
+      "approved_canonical_sha256": "d69a38766e95894ba795a36140c36974290053787fe884f68d750d42270c9949",
+      "historical_contract": "acc8dbd555cdde2ce5bb42e255bea8b2db603e192afbbba7068158e609583547"
+    },
+    {
+      "module": "services/mailer.service",
+      "baseline_canonical_sha256": "89521e36493905ceb21eb1462a3c4e267783572035ec15e1817496ebf51ca1fd",
+      "approved_canonical_sha256": "394c094591000047014092aacb2bf4b350bc9e09b1a36f18c4815f07dbe8274c",
+      "historical_contract": "89521e36493905ceb21eb1462a3c4e267783572035ec15e1817496ebf51ca1fd"
+    }
+  ]
+}

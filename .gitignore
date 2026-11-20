@@ -1,0 +1,70 @@
+# Default-deny root: operational data and legacy tools are never staged implicitly.
+/*
+!/.gitignore
+!/docs/
+!/README.md
+!/AGENTS.md
+!/AI_CODEBASE_MAP.md
+!/package.json
+!/package-lock.json
+!/tsconfig.json
+!/jest.config.js
+!/src/
+!/dist/
+!/tests/
+!/knowledge/
+!/scripts/
+!/sql/
+!/config/
+!/assets/
+!/public/
+!/phase2/
+!/document/
+
+/config/*
+!/config/local-server.example.json
+/assets/*
+!/assets/fonts/
+/public/*
+!/public/assets/
+!/public/images/
+/public/images/*
+!/public/images/lineoa-support-qr.png
+!/public/document/
+/public/document/*
+!/public/document/rules.pdf
+/phase2/*
+!/phase2/src/
+!/phase2/public/
+/phase2/public/*
+!/phase2/public/router.php
+!/phase2/public/assets/
+/document/*
+!/document/(ตัวอย่าง) ใบรายชื่อนักกีฬา.xlsx
+!/document/(ตัวอย่าง) ใบรายชื่อนักกีฬา.pdf
+!/document/Phase 2/
+/document/Phase 2/*
+!/document/Phase 2/Phototype_2/
+/document/Phase 2/Phototype_2/*
+!/document/Phase 2/Phototype_2/PMYC_Developer_Handoff_Prototype_v2_Fixed/
+
+# Private state, uploads and installed dependencies, at any depth.
+**/.runtime/
+**/uploads/
+**/node_modules/
+**/vendor/
+**/.env*
+**/private-support-attachments/
+**/__pycache__/
+*.log
+*.pem
+*.key
+*.sqlite*
+*.db
+*.before-recovery
+*.backup-*
+*.stage-*
+*.bak
+*.bak-*
+*.syntaxcheck-*
+!/dev-start.cjs
