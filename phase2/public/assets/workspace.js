@@ -1,7 +1,9 @@
 (() => {
   const root = document.querySelector('[data-workspace-v16]');
   if (!root) return;
-  root.querySelectorAll('.thai-date-wrap').forEach(wrap => {
+  const initMainWidgets = container => {
+    if (!container) return;
+    container.querySelectorAll('.thai-date-wrap').forEach(wrap => {
     const textInput = wrap.querySelector('[data-thai-date-input]');
     if (!textInput) return;
     const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -110,7 +112,136 @@
     textInput.addEventListener('focus', () => { if (popover.hidden) openCal(); });
     document.addEventListener('click', e => { if (!wrap.contains(e.target)) popover.hidden = true; });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') popover.hidden = true; });
-  });
+    });
+    const ceremony = container.querySelector('[data-ceremony-form]');
+    if (ceremony) {
+      const reasonField = ceremony.querySelector('textarea[name="reason"]');
+      const submitBtn = ceremony.querySelector('button[type="submit"]');
+      const statusEl = ceremony.querySelector('[data-ceremony-submit-status]');
+      const syncReasonGate = () => {
+        if (!reasonField || !submitBtn || ceremony.dataset.submitting === 'true') return;
+        const hasReason = reasonField.value.trim().length > 0;
+        submitBtn.disabled = !hasReason;
+        if (statusEl) {
+          statusEl.textContent = hasReason ? 'พร้อมเริ่มพิธีจับสลาก' : 'กรุณากรอกเหตุผลในการจับสลากใหม่ก่อนเริ่มพิธีจับสลาก';
+        }
+      };
+      syncReasonGate();
+      reasonField?.addEventListener('input', syncReasonGate);
+      ceremony.addEventListener('submit', event => {
+        if (reasonField && reasonField.value.trim().length === 0) {
+          event.preventDefault();
+          syncReasonGate();
+          reasonField.focus();
+          return;
+        }
+        if (ceremony.dataset.submitting === 'true') {
+          event.preventDefault();
+          return;
+        }
+        ceremony.dataset.submitting = 'true';
+        if (submitBtn) submitBtn.disabled = true;
+        if (statusEl) statusEl.textContent = 'กำลังบันทึกผลจับสลาก';
+      });
+    }
+    window.addEventListener('pageshow', event => {
+      if (!event.persisted || !ceremony) return;
+      delete ceremony.dataset.submitting;
+      ceremony.querySelector('button[type="submit"]').disabled = false;
+      ceremony.querySelector('[data-ceremony-submit-status]').textContent = 'พร้อมเริ่มพิธีจับสลาก';
+    });
+    const reveal = container.querySelector('[data-ceremony-reveal]');
+    const confirmDialog = container.querySelector('[data-draw-confirm]');
+    if (confirmDialog) {
+      const open = container.querySelector('[data-open-draw-confirm]');
+      const submit = confirmDialog.querySelector('button[type="submit"]');
+      open.addEventListener('click', () => confirmDialog.showModal());
+      confirmDialog.querySelector('[data-close-draw-confirm]').addEventListener('click', () => confirmDialog.close());
+      confirmDialog.addEventListener('close', () => open.focus());
+      confirmDialog.querySelector('form').addEventListener('submit', event => {
+        if (submit.disabled) event.preventDefault();
+        else submit.disabled = true;
+      });
+      window.addEventListener('pageshow', event => {
+        if (event.persisted) submit.disabled = false;
+      });
+    }
+    if (reveal) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('reveal');
+      window.history.replaceState(null, '', url);
+      const balls = [...reveal.querySelectorAll('[data-ceremony-ball]')];
+      const targets = [...reveal.querySelectorAll('[data-ceremony-target]')];
+      const waits = [...reveal.querySelectorAll('[data-ceremony-wait]')];
+      const machine = reveal.querySelector('[data-ceremony-machine]');
+      const status = reveal.querySelector('[data-ceremony-status]');
+      const review = reveal.querySelector('[data-ceremony-review]');
+      const counter = reveal.querySelector('[data-ceremony-counter]');
+      // A1..An are the saved draw slots, never browser-generated selections.
+      const ordered = [...balls].sort((a, b) => Number(a.dataset.ceremonyBall.slice(1)) - Number(b.dataset.ceremonyBall.slice(1)));
+      const open = (ball, index) => {
+        ball.classList.add('consumed');
+        const slot = ball.dataset.ceremonyBall;
+        targets.filter(target => target.dataset.ceremonyTarget === slot).forEach(target => { target.hidden = false; });
+        waits.filter(wait => wait.dataset.ceremonyWait === slot).forEach(wait => { wait.hidden = true; });
+        if (counter) counter.textContent = String(index + 1);
+        if (status) status.textContent = index + 1 === ordered.length ? 'เปิดทีมครบแล้ว' : `เปิดแล้ว ${index + 1} จาก ${ordered.length} ทีม`;
+        if (index + 1 === ordered.length) {
+          machine?.classList.remove('running');
+          machine?.classList.add('complete');
+          if (review) review.hidden = false;
+        }
+      };
+      if (!ordered.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        ordered.forEach(open);
+        if (review) review.hidden = false;
+      } else {
+        machine?.classList.add('running');
+        ordered.forEach((ball, index) => window.setTimeout(() => open(ball, index), 1200 + 900 * index));
+      }
+    }
+
+    const scheduleForm = container.querySelector('#schedule-publish-form');
+    const scheduleChoices = [...container.querySelectorAll('[data-schedule-select]')];
+    const selectAll = container.querySelector('[data-schedule-select-all]');
+    const publish = container.querySelector('[data-schedule-publish]');
+    const updateScheduleSelection = () => {
+      const selected = scheduleChoices.filter(choice => choice.checked).length;
+      if (publish) {
+        publish.disabled = selected === 0;
+        publish.textContent = selected ? `เผยแพร่รายการที่เลือก (${selected})` : 'เผยแพร่รายการที่เลือก';
+      }
+      if (selectAll) {
+        selectAll.checked = scheduleChoices.length > 0 && selected === scheduleChoices.length;
+        selectAll.indeterminate = selected > 0 && selected < scheduleChoices.length;
+      }
+    };
+    scheduleChoices.forEach(choice => choice.addEventListener('change', updateScheduleSelection));
+    selectAll?.addEventListener('change', () => {
+      scheduleChoices.forEach(choice => { choice.checked = selectAll.checked; });
+      updateScheduleSelection();
+    });
+    scheduleForm?.addEventListener('submit', event => {
+      if (scheduleForm.dataset.submitting === 'true' || !scheduleChoices.some(choice => choice.checked)) {
+        event.preventDefault();
+        return;
+      }
+      if (!window.confirm(`ยืนยันเผยแพร่กำหนดการแข่งขัน ${scheduleChoices.filter(choice => choice.checked).length} คู่ที่เลือกหรือไม่`)) {
+        event.preventDefault();
+        return;
+      }
+      scheduleForm.dataset.submitting = 'true';
+      if (publish) publish.disabled = true;
+    });
+    container.querySelectorAll('.schedule-republish').forEach(form => form.addEventListener('submit', event => {
+      if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
+      if (!window.confirm('ยืนยันเผยแพร่กำหนดการแข่งขันฉบับแก้ไขของคู่นี้หรือไม่')) { event.preventDefault(); return; }
+      form.dataset.submitting = 'true';
+      form.querySelector('button[type="submit"]').disabled = true;
+    }));
+    updateScheduleSelection();
+  };
+  initMainWidgets(root);
   const sidebar = root.querySelector('.sidebar');
   const toggle = root.querySelector('.mobile-toggle');
   const backdrop = root.querySelector('.workspace-backdrop');
@@ -127,133 +258,6 @@
   root.querySelector('.sidebar-close')?.addEventListener('click', () => close(true));
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && sidebar.classList.contains('open')) close(true); });
   window.addEventListener('resize', () => { if (window.matchMedia('(min-width: 801px)').matches) close(); });
-  const ceremony = root.querySelector('[data-ceremony-form]');
-  if (ceremony) {
-    const reasonField = ceremony.querySelector('textarea[name="reason"]');
-    const submitBtn = ceremony.querySelector('button[type="submit"]');
-    const statusEl = ceremony.querySelector('[data-ceremony-submit-status]');
-    const syncReasonGate = () => {
-      if (!reasonField || !submitBtn || ceremony.dataset.submitting === 'true') return;
-      const hasReason = reasonField.value.trim().length > 0;
-      submitBtn.disabled = !hasReason;
-      if (statusEl) {
-        statusEl.textContent = hasReason ? 'พร้อมเริ่มพิธีจับสลาก' : 'กรุณากรอกเหตุผลในการจับสลากใหม่ก่อนเริ่มพิธีจับสลาก';
-      }
-    };
-    syncReasonGate();
-    reasonField?.addEventListener('input', syncReasonGate);
-    ceremony.addEventListener('submit', event => {
-      if (reasonField && reasonField.value.trim().length === 0) {
-        event.preventDefault();
-        syncReasonGate();
-        reasonField.focus();
-        return;
-      }
-      if (ceremony.dataset.submitting === 'true') {
-        event.preventDefault();
-        return;
-      }
-      ceremony.dataset.submitting = 'true';
-      if (submitBtn) submitBtn.disabled = true;
-      if (statusEl) statusEl.textContent = 'กำลังบันทึกผลจับสลาก';
-    });
-  }
-  window.addEventListener('pageshow', event => {
-    if (!event.persisted || !ceremony) return;
-    delete ceremony.dataset.submitting;
-    ceremony.querySelector('button[type="submit"]').disabled = false;
-    ceremony.querySelector('[data-ceremony-submit-status]').textContent = 'พร้อมเริ่มพิธีจับสลาก';
-  });
-  const reveal = root.querySelector('[data-ceremony-reveal]');
-  const confirmDialog = root.querySelector('[data-draw-confirm]');
-  if (confirmDialog) {
-    const open = root.querySelector('[data-open-draw-confirm]');
-    const submit = confirmDialog.querySelector('button[type="submit"]');
-    open.addEventListener('click', () => confirmDialog.showModal());
-    confirmDialog.querySelector('[data-close-draw-confirm]').addEventListener('click', () => confirmDialog.close());
-    confirmDialog.addEventListener('close', () => open.focus());
-    confirmDialog.querySelector('form').addEventListener('submit', event => {
-      if (submit.disabled) event.preventDefault();
-      else submit.disabled = true;
-    });
-    window.addEventListener('pageshow', event => {
-      if (event.persisted) submit.disabled = false;
-    });
-  }
-  if (reveal) {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('reveal');
-    window.history.replaceState(null, '', url);
-    const balls = [...reveal.querySelectorAll('[data-ceremony-ball]')];
-    const targets = [...reveal.querySelectorAll('[data-ceremony-target]')];
-    const waits = [...reveal.querySelectorAll('[data-ceremony-wait]')];
-    const machine = reveal.querySelector('[data-ceremony-machine]');
-    const status = reveal.querySelector('[data-ceremony-status]');
-    const review = reveal.querySelector('[data-ceremony-review]');
-    const counter = reveal.querySelector('[data-ceremony-counter]');
-    // A1..An are the saved draw slots, never browser-generated selections.
-    const ordered = [...balls].sort((a, b) => Number(a.dataset.ceremonyBall.slice(1)) - Number(b.dataset.ceremonyBall.slice(1)));
-    const open = (ball, index) => {
-      ball.classList.add('consumed');
-      const slot = ball.dataset.ceremonyBall;
-      targets.filter(target => target.dataset.ceremonyTarget === slot).forEach(target => { target.hidden = false; });
-      waits.filter(wait => wait.dataset.ceremonyWait === slot).forEach(wait => { wait.hidden = true; });
-      if (counter) counter.textContent = String(index + 1);
-      if (status) status.textContent = index + 1 === ordered.length ? 'เปิดทีมครบแล้ว' : `เปิดแล้ว ${index + 1} จาก ${ordered.length} ทีม`;
-      if (index + 1 === ordered.length) {
-        machine?.classList.remove('running');
-        machine?.classList.add('complete');
-        if (review) review.hidden = false;
-      }
-    };
-    if (!ordered.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      ordered.forEach(open);
-      if (review) review.hidden = false;
-    } else {
-      machine?.classList.add('running');
-      ordered.forEach((ball, index) => window.setTimeout(() => open(ball, index), 1200 + 900 * index));
-    }
-  }
-
-  const scheduleForm = root.querySelector('#schedule-publish-form');
-  const scheduleChoices = [...root.querySelectorAll('[data-schedule-select]')];
-  const selectAll = root.querySelector('[data-schedule-select-all]');
-  const publish = root.querySelector('[data-schedule-publish]');
-  const updateScheduleSelection = () => {
-    const selected = scheduleChoices.filter(choice => choice.checked).length;
-    if (publish) {
-      publish.disabled = selected === 0;
-      publish.textContent = selected ? `เผยแพร่รายการที่เลือก (${selected})` : 'เผยแพร่รายการที่เลือก';
-    }
-    if (selectAll) {
-      selectAll.checked = scheduleChoices.length > 0 && selected === scheduleChoices.length;
-      selectAll.indeterminate = selected > 0 && selected < scheduleChoices.length;
-    }
-  };
-  scheduleChoices.forEach(choice => choice.addEventListener('change', updateScheduleSelection));
-  selectAll?.addEventListener('change', () => {
-    scheduleChoices.forEach(choice => { choice.checked = selectAll.checked; });
-    updateScheduleSelection();
-  });
-  scheduleForm?.addEventListener('submit', event => {
-    if (scheduleForm.dataset.submitting === 'true' || !scheduleChoices.some(choice => choice.checked)) {
-      event.preventDefault();
-      return;
-    }
-    if (!window.confirm(`ยืนยันเผยแพร่กำหนดการแข่งขัน ${scheduleChoices.filter(choice => choice.checked).length} คู่ที่เลือกหรือไม่`)) {
-      event.preventDefault();
-      return;
-    }
-    scheduleForm.dataset.submitting = 'true';
-    if (publish) publish.disabled = true;
-  });
-  root.querySelectorAll('.schedule-republish').forEach(form => form.addEventListener('submit', event => {
-    if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
-    if (!window.confirm('ยืนยันเผยแพร่กำหนดการแข่งขันฉบับแก้ไขของคู่นี้หรือไม่')) { event.preventDefault(); return; }
-    form.dataset.submitting = 'true';
-    form.querySelector('button[type="submit"]').disabled = true;
-  }));
-  updateScheduleSelection();
   const scopeNames = ['season_id', 'division_code', 'stage', 'province', 'district'];
   const currentUrl = new URL(window.location.href);
   const form = root.querySelector('.workspace-filters');
@@ -319,7 +323,7 @@
     prov.setCustomValidity(prov.value && !choices.includes(prov.value) ? 'กรุณาเลือกจังหวัดที่มีสิทธิ์จากรายการ' : '');
     return prov.checkValidity();
   };
-  const fetchDashboard = async (targetUrl, pushHistory = true) => {
+  const fetchWorkspacePage = async (targetUrl, expectedPathname, pushHistory = true) => {
     const curMain = root.querySelector('main');
     if (!curMain || typeof window.fetch !== 'function' || typeof window.DOMParser !== 'function') {
       window.location.assign(targetUrl);
@@ -335,7 +339,7 @@
         headers: { 'X-Requested-With': 'fetch' },
         signal: activeFetch ? activeFetch.signal : undefined
       });
-      if (!res.ok || (res.url && !new URL(res.url, window.location.href).pathname.endsWith('/dashboard'))) {
+      if (!res.ok || (expectedPathname && res.url && new URL(res.url, window.location.href).pathname !== expectedPathname)) {
         window.location.assign(targetUrl);
         return;
       }
@@ -347,6 +351,7 @@
         return;
       }
       curMain.innerHTML = newMain.innerHTML;
+      initMainWidgets(curMain);
       const curNav = root.querySelector('.sidebar nav');
       const newNav = doc.querySelector('.sidebar nav');
       if (curNav && newNav) curNav.innerHTML = newNav.innerHTML;
@@ -356,7 +361,7 @@
         curBrand.setAttribute('href', newBrand.getAttribute('href'));
       }
       if (pushHistory && window.history && typeof window.history.pushState === 'function') {
-        window.history.pushState({ dashboardUrl: targetUrl }, '', targetUrl);
+        window.history.pushState({ workspaceUrl: targetUrl }, '', targetUrl);
       }
       const updatedForm = root.querySelector('.workspace-filters');
       const updatedUrl = new URL(targetUrl, window.location.href);
@@ -381,7 +386,7 @@
       const value = activeForm.elements.namedItem(name)?.value;
       if (value) url.searchParams.set(name, value);
     }
-    fetchDashboard(url.toString(), true);
+    fetchWorkspacePage(url.toString(), url.pathname, true);
   };
   const onFormSubmit = (e, activeForm) => {
     const prov = activeForm.elements.namedItem('province');
@@ -390,17 +395,17 @@
       prov?.reportValidity();
       return;
     }
+    e.preventDefault();
     if (activeForm.elements.namedItem('dashboard_filters')) {
-      e.preventDefault();
       try { sessionStorage.setItem('pmyc-dashboard-submit', '1'); } catch (_) {}
-      const url = new URL(activeForm.action, window.location.href);
-      const params = new URLSearchParams();
-      for (const [k, v] of new FormData(activeForm).entries()) {
-        params.append(k, String(v));
-      }
-      url.search = params.toString();
-      fetchDashboard(url.toString(), true);
     }
+    const url = new URL(activeForm.action, window.location.href);
+    const params = new URLSearchParams();
+    for (const [k, v] of new FormData(activeForm).entries()) {
+      params.append(k, String(v));
+    }
+    url.search = params.toString();
+    fetchWorkspacePage(url.toString(), url.pathname, true);
   };
   const onFormChange = (e, activeForm) => {
     const name = e.target.name;
@@ -445,7 +450,7 @@
   }
   if (typeof window.addEventListener === 'function') {
     window.addEventListener('popstate', () => {
-      if (isDashboardPage()) fetchDashboard(window.location.href, false);
+      if (root.querySelector('.workspace-filters')) fetchWorkspacePage(window.location.href, window.location.pathname, false);
     });
   }
 
