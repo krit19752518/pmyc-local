@@ -42,7 +42,7 @@ final class MatchDetailView
     public static function page(string $body,array $scope,array $match,array $draw,array $sides,?array $official,array $context,array $filters,string $base,string $tab='schedule',int $status=200):array
     {
         $e=WorkspaceView::e(...);$back=$filters;$back['match_id']='';
-        $actions='<a class="btn" href="'.$e(WorkspaceView::url('schedule',$back)).'">กลับตารางการแข่งขัน</a>'
+        $actions='<a class="btn" href="'.$e(WorkspaceView::url('schedule',$back)).'">'.WorkspaceView::icon('back').'กลับตารางการแข่งขัน</a>'
             .'<a class="btn" href="'.$e(WorkspaceView::url('bracket',$back)).'">'.WorkspaceView::icon('bracket').'ดูสายการแข่งขัน</a>';
         $heading=WorkspaceView::heading('รายละเอียดการแข่งขัน · M'.str_pad((string)$match['number'],2,'0',STR_PAD_LEFT),
             implode(' · ',array_filter([$scope['season'] ?? '',EventDraft::DIVISIONS[$scope['division_code']] ?? $scope['division_code'],

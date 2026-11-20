@@ -1,6 +1,7 @@
 (() => {
   const root = document.querySelector('[data-workspace-v16]');
   if (!root) return;
+  const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const initMainWidgets = container => {
     if (!container) return;
     container.querySelectorAll('.thai-date-wrap').forEach(wrap => {
@@ -241,12 +242,47 @@
         });
       });
     }
+    const batchDialog = container.querySelector('#schedule-batch-confirm');
+    const batchCount = container.querySelector('#schedule-batch-count');
+    const batchList = container.querySelector('#schedule-batch-list');
+    const batchSubmit = container.querySelector('#schedule-batch-submit');
+    let batchConfirmed = false;
+    batchDialog?.querySelectorAll('[data-schedule-batch-cancel]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (typeof batchDialog.close === 'function') batchDialog.close();
+        else batchDialog.removeAttribute('open');
+      });
+    });
+    batchSubmit?.addEventListener('click', () => {
+      if (!scheduleForm || scheduleForm.dataset.submitting === 'true') return;
+      batchConfirmed = true;
+      if (typeof batchDialog?.close === 'function') batchDialog.close();
+      scheduleForm.dataset.submitting = 'true';
+      if (publish) publish.disabled = true;
+      scheduleForm.submit();
+    });
     scheduleForm?.addEventListener('submit', event => {
-      if (scheduleForm.dataset.submitting === 'true' || !scheduleChoices.some(choice => choice.checked)) {
+      const checked = scheduleChoices.filter(choice => choice.checked);
+      if (scheduleForm.dataset.submitting === 'true' || !checked.length) {
         event.preventDefault();
         return;
       }
-      if (!window.confirm(`ยืนยันเผยแพร่กำหนดการแข่งขัน ${scheduleChoices.filter(choice => choice.checked).length} คู่ที่เลือกหรือไม่`)) {
+      if (!batchConfirmed && batchDialog) {
+        event.preventDefault();
+        if (batchCount) batchCount.textContent = String(checked.length);
+        if (batchSubmit) batchSubmit.textContent = `เผยแพร่ ${checked.length} คู่`;
+        if (batchList) {
+          batchList.innerHTML = checked.map(c => {
+            const label = c.getAttribute('data-match-label') || '';
+            const when = c.getAttribute('data-match-when') || '';
+            return `<li><strong>${escHtml(label)}</strong><br><small class="muted">${escHtml(when)}</small></li>`;
+          }).join('');
+        }
+        if (typeof batchDialog.showModal === 'function') batchDialog.showModal();
+        else batchDialog.setAttribute('open', '');
+        return;
+      }
+      if (!batchDialog && !window.confirm(`ยืนยันเผยแพร่กำหนดการแข่งขัน ${checked.length} คู่ที่เลือกหรือไม่`)) {
         event.preventDefault();
         return;
       }
