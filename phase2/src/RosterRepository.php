@@ -26,6 +26,7 @@ final class RosterRepository
             // Serialize closure with writes, then recheck live permissions under the Competition lock.
             $this->db->prepare('SELECT e.id FROM p2_event e JOIN p2_competition c ON c.event_id=e.id WHERE c.id=? FOR SHARE OF e')->execute([$id]);
             $scope=(new CompetitionRepository($this->db))->requireAccess($id,$actor,'import');
+            if(($scope['division_code'] ?? '')==='U18_GIRL')WomenRegistrationAdapter::requireDrawDecision();
             $s=$this->db->prepare('SELECT * FROM p2_roster_revision WHERE request_id=?');$s->execute([$request]);$retry=$s->fetch();
             if ($retry) {
                 if (!hash_equals($retry['request_hash'],$hash)) throw new \DomainException('คำขอนี้ถูกใช้กับข้อมูลอื่นแล้ว');

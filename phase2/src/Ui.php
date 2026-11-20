@@ -21,7 +21,7 @@ final class Ui
     }
     public static function context(array $s):string
     {
-        $items=['ฤดูกาล'=>$s['season'] ?? '—','รุ่นอายุ'=>EventDraft::DIVISIONS[$s['division_code'] ?? ''] ?? (!empty($s['divisions'])?EventDraft::divisionLabels($s['divisions']):'ทุกรุ่นอายุ'),'Stage'=>isset($s['stage'])?'Stage '.$s['stage'].' · '.([1=>'ระดับอำเภอ',2=>'ระดับจังหวัด'][$s['stage']] ?? 'รอยืนยันกติกา'):'ทุก Stage','พื้นที่'=>implode(' · ',array_filter([$s['province'] ?? '',$s['district'] ?? '',$s['zone'] ?? ''])) ?: 'ทุกพื้นที่ที่มีสิทธิ์'];
+        $items=['ฤดูกาล'=>$s['season'] ?? '—','รุ่นอายุ'=>EventDraft::DIVISIONS[$s['division_code'] ?? ''] ?? (!empty($s['divisions'])?EventDraft::divisionLabels($s['divisions']):'ทุกรุ่นอายุ'),'Stage'=>isset($s['stage'])?'Stage '.$s['stage'].' · '.((($s['division_code'] ?? '')==='U18_GIRL'&&(int)$s['stage']===1)?'หญิง · ระดับจังหวัด':([1=>'ระดับอำเภอ',2=>'ระดับจังหวัด'][$s['stage']] ?? 'รอยืนยันกติกา')):'ทุก Stage','พื้นที่'=>implode(' · ',array_filter([$s['province'] ?? '',$s['district'] ?? '',$s['zone'] ?? ''])) ?: 'ทุกพื้นที่ที่มีสิทธิ์'];
         $html='<section class="context-panel" aria-label="บริบทของรายการแข่งขัน"><div class="context-head"><div><b>บริบทของรายการแข่งขัน</b><small class="block">'.self::e($s['event_name'] ?? $s['name'] ?? '').'</small></div><span class="badge '.(!empty($s['is_test'])?'b-amber':'b-green').'">'.(!empty($s['is_test'])?'ข้อมูล Demo':'ข้อมูลจริง').'</span></div><div class="context-grid">';
         foreach($items as $label=>$value)$html.='<div class="context-item"><label>'.$label.'</label><strong>'.self::e($value).'</strong></div>';
         return $html.'</div></section>';
