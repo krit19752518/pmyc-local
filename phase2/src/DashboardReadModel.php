@@ -351,7 +351,7 @@ final class DashboardReadModel
                 $b['teams_error']=true;
             }
         }
-        if($currentList===null&&!$b['teams_error']){
+        if($currentList===null&&!$b['teams_error']&&($rosterTeams||$drawsByComp)){
             $currentList=[];
             foreach($rosterTeams as $t){
                 $id=(string)$t['source_team_id'];
