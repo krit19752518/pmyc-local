@@ -112,8 +112,9 @@ final class SchedulePages
             $pending=str_starts_with($name,'รอ')||str_starts_with($name,'ผู้ชนะ');
             if($pending)return '<span class="muted">'.$e($name).'</span>';
             $clean=trim((string)preg_replace('/^[A-Z]\d+\s*·\s*/u','',$name));
-            $initial=mb_substr($clean !== '' ? $clean : $name,0,1,'UTF-8');
-            return '<span class="mini-crest'.($alt?' alt':'').'" aria-hidden="true">'.$e($initial).'</span><strong>'.$e($clean !== '' ? $clean : $name).'</strong>';
+            $text=$clean !== '' ? $clean : $name;
+            $initial=preg_match('/^./u',$text,$m)?$m[0]:substr($text,0,1);
+            return '<span class="mini-crest'.($alt?' alt':'').'" aria-hidden="true">'.$e($initial).'</span><strong>'.$e($text).'</strong>';
         };
         foreach($decorated as $match){$detail=MatchDetailView::url($base.$match['id'],$filters);
             $isReady=$can&&$locked&&$match['schedule_key']==='ready';
