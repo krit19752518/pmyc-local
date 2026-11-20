@@ -50,7 +50,7 @@ final class WorkspaceView
     private static function link(string $key,array $f,string $label,string $icon,string $active):string
     {
         $selected=$key===$active||($active==='detail'&&$key==='schedule');
-        $href=in_array($key,['bracket','schedule'],true)?self::filterEntryUrl($key,$f):($key==='dashboard'&&self::hasScopeFilters($f)?self::url($key,$f,['dashboard_filters'=>'1']):self::url($key,$f));
+        $href=$key==='dashboard'&&self::hasScopeFilters($f)?self::url($key,$f,['dashboard_filters'=>'1']):self::url($key,$f);
         return '<a class="nav-link'.($selected?' active':'').'" href="'.self::e($href).'"'.($selected?' aria-current="page"':'').'>'.self::icon($icon).self::e($label).'</a>';
     }
     public static function page(string $active,string $content,array $context,array $f=[],int $status=200):array

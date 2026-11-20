@@ -292,9 +292,10 @@
   if (form && (currentUrl.searchParams.get('dashboard_filters') === '1' || scopeNames.some(n => currentUrl.searchParams.get(n)))) {
     saveScopeFilters(form);
   }
-  const savedFilters = loadSavedFilters();
-  if (savedFilters) {
-    root.querySelectorAll('a[href*="/phase2demo/workspace/dashboard"], a[href*="/phase2demo/workspace/pending-setup"]').forEach(link => {
+  const applySavedFiltersToLinks = () => {
+    const savedFilters = loadSavedFilters();
+    if (!savedFilters) return;
+    root.querySelectorAll('a[href*="/phase2demo/workspace/dashboard"], a[href*="/phase2demo/workspace/pending-setup"], a[href*="/phase2demo/workspace/pending-bracket"], a[href*="/phase2demo/workspace/pending-schedule"]').forEach(link => {
       if (link.closest('.page-heading')) return;
       const target = new URL(link.getAttribute('href'), window.location.href);
       const isDash = target.pathname.endsWith('/dashboard');
@@ -307,7 +308,8 @@
         link.setAttribute('href', target.pathname + target.search);
       }
     });
-  }
+  };
+  applySavedFiltersToLinks();
   root.querySelectorAll('.page-heading a.btn[href*="/phase2demo/workspace/pending-setup"]').forEach(btn => {
     btn.addEventListener('click', clearSavedFilters);
   });
@@ -368,6 +370,7 @@
       if (updatedForm && (updatedUrl.searchParams.get('dashboard_filters') === '1' || scopeNames.some(n => updatedUrl.searchParams.get(n)))) {
         saveScopeFilters(updatedForm);
       }
+      applySavedFiltersToLinks();
     } catch (err) {
       if (err && err.name === 'AbortError') return;
       window.location.assign(targetUrl);
