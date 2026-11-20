@@ -35,9 +35,11 @@ final class MatchDetailView
     {
         $e=WorkspaceView::e(...);$names=array_column($draw['slots'] ?? [],'name','source_team_id');
         $home=$names[$sides['a'] ?? ''] ?? 'รอทีมผ่านเข้ารอบ';$away=$names[$sides['b'] ?? ''] ?? 'รอทีมผ่านเข้ารอบ';
+        $homeInit=isset($names[$sides['a'] ?? ''])&&preg_match('/^./u',$home,$mh)?$mh[0]:'?';
+        $awayInit=isset($names[$sides['b'] ?? ''])&&preg_match('/^./u',$away,$ma)?$ma[0]:'?';
         $result=$official['result'] ?? null;$score=$result?$e($result['total_a']).' : '.$e($result['total_b']):'VS';
         $sub=$result&&($result['type'] ?? '')==='PENALTIES'?'จุดโทษ '.$result['penalties_a'].' : '.$result['penalties_b']:'รอบที่ '.$match['round'];
-        return '<div class="score-hero match-detail-hero"><div><span class="crest" aria-hidden="true">H</span><strong>'.$e($home).'</strong><small>ทีมเหย้า</small></div><div><div class="big-score">'.$score.'</div><small>'.$e($sub).'</small></div><div><span class="crest alt" aria-hidden="true">A</span><strong>'.$e($away).'</strong><small>ทีมเยือน</small></div></div>';
+        return '<div class="score-hero match-detail-hero"><div><span class="crest" aria-hidden="true">'.$e($homeInit).'</span><strong>'.$e($home).'</strong><small>ทีมเหย้า</small></div><div><div class="big-score">'.$score.'</div><small>'.$e($sub).'</small></div><div><span class="crest alt" aria-hidden="true">'.$e($awayInit).'</span><strong>'.$e($away).'</strong><small>ทีมเยือน</small></div></div>';
     }
     public static function page(string $body,array $scope,array $match,array $draw,array $sides,?array $official,array $context,array $filters,string $base,string $tab='schedule',int $status=200):array
     {
