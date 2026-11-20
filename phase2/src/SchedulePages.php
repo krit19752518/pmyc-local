@@ -204,6 +204,13 @@ final class SchedulePages
         if(!$start)return '';
         try{return (new \DateTimeImmutable($start))->setTimezone(new \DateTimeZone('Asia/Bangkok'))->format('H:i').' น.';}catch(\Exception){return '';}
     }
+    private static function bind(array &$filters,array $scope):void
+    {
+        foreach(['event_id'=>'event_id','competition_id'=>'id','division_code'=>'division_code','stage'=>'stage','province'=>'province','district'=>'district'] as $filter=>$key){
+            $value=(string)($scope[$key] ?? '');if($filter==='stage')$value=(string)(int)$scope[$key];
+            if($filters[$filter]!==''&&$filters[$filter]!==$value)throw new \InvalidArgumentException('ตัวกรองไม่ตรงกับการแข่งขันที่เลือก');$filters[$filter]=$value;
+        }
+    }
     private static function page(array $context,array $filters,string $body,int $status=200):array
     {
         $actions='';
