@@ -161,17 +161,25 @@ describe('Registration & Approval Statistics 2-Tabs (Issue #2)', () => {
     const pageRes = await request(app).get('/registration-statistics.php');
     expect(pageRes.status).toBe(200);
     expect(pageRes.text).toContain('/api/authorized/age-group-approval-statistics');
-    expect(pageRes.text).toContain('app.js?v=issue2-2tabs');
+    expect(pageRes.text).toContain('/admin/api/age-group-approval-statistics');
+    expect(pageRes.text).toContain('app.js?v=issue4-1');
 
     const unauthRes = await request(app).get('/api/authorized/age-group-approval-statistics?preset=all');
     expect(unauthRes.status).toBe(403);
     expect(unauthRes.body.error).toBe('approval_statistics_restricted');
+
+    const unauthAdminRes = await request(app).get('/admin/api/age-group-approval-statistics?preset=all');
+    expect(unauthAdminRes.status).toBe(403);
 
     authorized = true;
     const authRes = await request(app).get('/api/authorized/age-group-approval-statistics?preset=all');
     expect(authRes.status).toBe(200);
     expect(authRes.body.selectedDateField).toBe('age_group_approved_at');
     expect(JSON.stringify(authRes.body)).not.toContain('teamName');
+
+    const authAdminRes = await request(app).get('/admin/api/age-group-approval-statistics?preset=all');
+    expect(authAdminRes.status).toBe(200);
+    expect(authAdminRes.body.selectedDateField).toBe('age_group_approved_at');
 
     const badDateRes = await request(app).get('/api/public/registration-statistics?preset=custom&from=2026-11-19&to=2026-11-10');
     expect(badDateRes.status).toBe(400);

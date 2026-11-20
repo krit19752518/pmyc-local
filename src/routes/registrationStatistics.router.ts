@@ -17,19 +17,34 @@ const REGISTRY_META = {
   url: 'https://github.com/thailand-geography-data/thailand-geography-json'
 };
 
+function getCookieValues(req: Request, name: string): string[] {
+  const header = String(req.headers.cookie || '');
+  if (!header) return [];
+  const values: string[] = [];
+  for (const part of header.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx === -1) continue;
+    const k = part.slice(0, idx).trim();
+    if (k !== name) continue;
+    try {
+      values.push(decodeURIComponent(part.slice(idx + 1).trim()));
+    } catch {
+      values.push(part.slice(idx + 1).trim());
+    }
+  }
+  return values;
+}
+
 async function isAuthorizedForApprovalStats(req: Request): Promise<boolean> {
   if (process.env.APPROVAL_STATS_PUBLIC_ENABLED === 'true') return true;
-  const cookies = parseCookies(req);
-  const satToken = cookies.phase2_sat_session || cookies.sat_session || '';
-  if (satToken) {
+  for (const satToken of [...getCookieValues(req, 'phase2_sat_session'), ...getCookieValues(req, 'sat_session')]) {
     const sat = verifyAdminSessionToken(satToken, 'sat');
     if (sat) {
       const user = await getAdminUserByUsername(sat.username);
       if (user && user.roleCode === 'SAT_OFFICER') return true;
     }
   }
-  const centralToken = cookies.admin_session || '';
-  if (centralToken) {
+  for (const centralToken of getCookieValues(req, 'admin_session')) {
     const central = verifyAdminSessionToken(centralToken, 'central');
     if (central) {
       const user = await getAdminUserByUsername(central.username);
@@ -120,7 +135,12 @@ export function createRegistrationStatisticsRouter(
     }
   });
 
-  router.get(['/api/authorized/age-group-approval-statistics', '/api/authorized/age-group-approval-statistics.csv'], async (req, res) => {
+  router.get([
+    '/api/authorized/age-group-approval-statistics',
+    '/api/authorized/age-group-approval-statistics.csv',
+    '/admin/api/age-group-approval-statistics',
+    '/admin/api/age-group-approval-statistics.csv'
+  ], async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     try {
