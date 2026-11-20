@@ -38,3 +38,6 @@
 .restricted-notice h3 { margin: 0 0 6px; font-size: 1.05rem; }
 .period-empty-banner { background: #f8fafc; border: 1px dashed #94a3b8; color: #334155; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; font-size: 0.9rem; }
 @media print { .report-tabs, .date-bar { display: none !important; } }
+.nav-portals { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.nav-portals .team-login:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 700px) { .nav-portals { gap: 10px; } }
