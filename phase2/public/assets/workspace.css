@@ -203,3 +203,4 @@
   .d-value { font-size: 27px; grid-column: 2; grid-row: 1 / span 2; align-self: center; }
   .d-caption { grid-column: 1; }
 }
+.schedule-inline-form{display:inline-flex;align-items:center;gap:8px;flex-shrink:0}
