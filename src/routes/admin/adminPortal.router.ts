@@ -2127,7 +2127,8 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
         const area = getRegistrationArea(team);
         team.registrationRankMessage = !area.district ? 'ยังไม่ระบุอำเภอ' : (!area.province ? 'ยังไม่ระบุจังหวัด' : '');
     });
-    const allProvinces = Array.from(new Set(allTeams.map(t => t.province).filter(Boolean))).sort();
+    const allProvinces = Array.from(new Set(allTeams.map(t => t.province).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
+    const satRegion = isSatOfficer && satProvince ? getRegionByProvince(satProvince) : '';
     // Fetch all players for category status calculations
     const allPlayersList = await getDbPlayers('ALL', isDemo);
     const playersByTeamMap: Record<string, any[]> = {};
@@ -2208,6 +2209,7 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
         return `<span class="text-warning-emphasis small">${label}</span>` + (canChangeTeamStatus
             ? `<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="${escapeDemoHtml(team.id)}" data-category="${category}" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">ตรวจสอบ / คืนสถานะ</button>` : '');
     };
+    const allRegions = Array.from(new Set(allTeams.map(t => t.region).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
     const initialFilteredTeams = allTeams.filter(t => {
         if (isSatOfficer && satProvince && t.province !== satProvince)
             return false;
@@ -2241,7 +2243,7 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
     <!-- Filters Bar -->
     <div class="card bg-light border-0 rounded-3 p-3 mb-4">
       <div class="row g-2 align-items-end mb-2">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label small fw-bold text-navy mb-1"><i class="bi bi-search me-1"></i> ค้นหาทีม / สังกัด</label>
           <input type="text" id="filterTeamSearch" class="form-control form-control-sm rounded-3" placeholder="พิมพ์ชื่อทีม หรือสังกัด...">
         </div>
@@ -2252,6 +2254,14 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
         <div class="col-md-2">
           <label class="form-label small fw-bold text-navy mb-1"><i class="bi bi-calendar-event me-1"></i> ถึงวันที่สมัคร</label>
           <input type="date" id="filterTeamEndDate" class="form-control form-control-sm rounded-3">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small fw-bold text-navy mb-1"><i class="bi bi-map me-1"></i> ภาค</label>
+          <select id="filterTeamRegion" class="form-select form-select-sm rounded-3" ${isSatOfficer ? 'disabled' : ''}>
+            ${isSatOfficer
+        ? `<option value="${satRegion}" selected>${satRegion || '-'}</option>`
+        : `<option value="">-- ทั้งหมดทุกภาค --</option>` + allRegions.map(r => `<option value="${r}">${r}</option>`).join('')}
+          </select>
         </div>
         <div class="col-md-2">
           <label class="form-label small fw-bold text-navy mb-1"><i class="bi bi-geo-alt me-1"></i> จังหวัด</label>
@@ -2266,11 +2276,6 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
           <select id="filterTeamDistrict" class="form-select form-select-sm rounded-3">
             <option value="">-- ทั้งหมดทุกเขต/อำเภอ --</option>
           </select>
-        </div>
-        <div class="col-md-1">
-          <button type="button" class="btn btn-sm btn-outline-secondary w-100 rounded-3 py-1" onclick="resetTeamFilters()" title="ล้างตัวกรองทั้งหมด">
-            <i class="bi bi-arrow-counterclockwise"></i> ล้าง
-          </button>
         </div>
       </div>
       <div class="row g-2 align-items-end">
@@ -2291,7 +2296,12 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
             <option value="DELETED">🗑️ ถูกลบแล้ว (DELETED)</option>
           </select>
         </div>
-        <div class="col-md-7 d-flex justify-content-end align-items-center">
+        <div class="col-md-1">
+          <button type="button" class="btn btn-sm btn-outline-secondary w-100 rounded-3 py-1" onclick="resetTeamFilters()" title="ล้างตัวกรองทั้งหมด">
+            <i class="bi bi-arrow-counterclockwise"></i> ล้าง
+          </button>
+        </div>
+        <div class="col-md-6 d-flex justify-content-end align-items-center">
           <span class="fs-5 fw-semibold text-dark">ข้อมูลจากการกรอง จำนวน <span id="filteredTeamsRowCount" class="text-danger">${initialFilteredTeams.length.toLocaleString('en-US')}</span> แถว</span>
         </div>
       </div>
@@ -2559,6 +2569,8 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
       const startDateVal = startDateEl ? startDateEl.value : '';
       const endDateEl = document.getElementById('filterTeamEndDate');
       const endDateVal = endDateEl ? endDateEl.value : '';
+      const regEl = document.getElementById('filterTeamRegion');
+      const reg = window.isSatOfficer ? '' : (regEl ? regEl.value : '');
       const provEl = document.getElementById('filterTeamProvince');
       const prov = window.isSatOfficer ? window.satProvince : (provEl ? provEl.value : '');
       const distEl = document.getElementById('filterTeamDistrict');
@@ -2579,6 +2591,7 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
           if (stat && t.status !== stat) return false;
         }
 
+        if (reg && (t.region || '') !== reg) return false;
         if (prov && window.PmycTeamArea.normalizeProvince(t.province) !== window.PmycTeamArea.normalizeProvince(prov)) return false;
         if (dist) {
           const teamDist = window.PmycTeamArea.getTeamDistrictName(t);
@@ -2727,6 +2740,30 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
       return window.PmycTeamArea.normalizeDistrictName(district, province);
     }
 
+    function updateProvinceOptions() {
+      if (window.isSatOfficer) return;
+      const regEl = document.getElementById('filterTeamRegion');
+      const selectedReg = regEl ? regEl.value : '';
+      const provSelect = document.getElementById('filterTeamProvince');
+      if (!provSelect) return;
+      const prevProv = provSelect.value;
+      const provinces = Array.from(new Set(
+        window.rawTeamsData
+          .filter(t => !selectedReg || t.region === selectedReg)
+          .map(t => t.province)
+          .filter(Boolean)
+      )).sort((a, b) => a.localeCompare(b, 'th'));
+      provSelect.innerHTML = '<option value="">-- ทั้งหมดทุกจังหวัด --</option>';
+      provinces.forEach(p => {
+        provSelect.innerHTML += '<option value="' + escapeHtml(p) + '">' + escapeHtml(p) + '</option>';
+      });
+      if (prevProv && provinces.includes(prevProv)) {
+        provSelect.value = prevProv;
+      } else {
+        provSelect.value = '';
+      }
+    }
+
     function updateDistrictOptions() {
       const provEl = document.getElementById('filterTeamProvince');
       const selectedProv = window.isSatOfficer ? window.satProvince : (provEl ? provEl.value : '');
@@ -2751,6 +2788,7 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
       const searchInput = document.getElementById('filterTeamSearch');
       const startDateEl = document.getElementById('filterTeamStartDate');
       const endDateEl = document.getElementById('filterTeamEndDate');
+      const regEl = document.getElementById('filterTeamRegion');
       const provEl = document.getElementById('filterTeamProvince');
       const distEl = document.getElementById('filterTeamDistrict');
       const genderEl = document.getElementById('filterTeamGender');
@@ -2759,6 +2797,8 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
       if (searchInput) searchInput.value = '';
       if (startDateEl) startDateEl.value = '';
       if (endDateEl) endDateEl.value = '';
+      if (regEl && !window.isSatOfficer) regEl.value = '';
+      if (!window.isSatOfficer) updateProvinceOptions();
       if (provEl && !window.isSatOfficer) provEl.value = '';
       if (genderEl) genderEl.value = '';
       if (statEl) statEl.value = '';
@@ -4005,6 +4045,12 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
       if (startDateEl) startDateEl.addEventListener('change', renderTeamsTable);
       const endDateEl = document.getElementById('filterTeamEndDate');
       if (endDateEl) endDateEl.addEventListener('change', renderTeamsTable);
+      const regEl = document.getElementById('filterTeamRegion');
+      if (regEl) regEl.addEventListener('change', () => {
+        updateProvinceOptions();
+        updateDistrictOptions();
+        renderTeamsTable();
+      });
       const provEl = document.getElementById('filterTeamProvince');
       if (provEl) provEl.addEventListener('change', () => {
         updateDistrictOptions();
