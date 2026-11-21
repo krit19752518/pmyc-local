@@ -2117,21 +2117,21 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
             if (!subCats.includes(catCode))
                 continue;
             const playersInCat = t.teamPlayers.filter((p) => String(p.category || p.categories || '').toUpperCase().split(',').map((c) => c.trim()).includes(catCode));
-            if (playersInCat.length > 0 && playersInCat.every((p) => p.docStatus === 'APPROVED')) {
-                let latestMs = 0;
-                let latestIso = '';
-                for (const p of playersInCat) {
+            const approvedPlayers = playersInCat.filter((p) => p.docStatus === 'APPROVED');
+            if (approvedPlayers.length >= statusHelper_1.MIN_APPROVED_CATEGORY_PLAYERS) {
+                const approvedTimestamps = [];
+                for (const p of approvedPlayers) {
                     const iso = playerApprovedAtMap.get(`${t.id}:${p.id}`);
                     if (iso) {
                         const ms = new Date(iso).getTime();
-                        if (ms > latestMs) {
-                            latestMs = ms;
-                            latestIso = iso;
-                        }
+                        if (Number.isFinite(ms))
+                            approvedTimestamps.push(ms);
                     }
                 }
-                if (latestIso)
-                    catApprovedAt[catCode] = latestIso;
+                approvedTimestamps.sort((a, b) => a - b);
+                if (approvedTimestamps.length >= statusHelper_1.MIN_APPROVED_CATEGORY_PLAYERS) {
+                    catApprovedAt[catCode] = new Date(approvedTimestamps[statusHelper_1.MIN_APPROVED_CATEGORY_PLAYERS - 1]).toISOString();
+                }
             }
         }
         t.categoryApprovedAt = catApprovedAt;
@@ -2444,16 +2444,14 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       var hasRejected = playersInCat.some(function(p) {
         return p.docStatus !== 'CORRECTED' && p.docStatus !== 'PENDING' && p.docStatus !== 'APPROVED' && (p.docStatus === 'REJECTED' || p.docStatus === 'ACTION_REQUIRED' || Boolean(p.remarks));
       });
-      var allApproved = playersInCat.length > 0 && playersInCat.every(function(p) {
-        return p.docStatus === 'APPROVED';
-      });
-      if (hasRejected) {
-        return rosterButton('<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-exclamation-circle-fill me-1"></i>ปรับแก้ข้อมูลนักกีฬา</span>');
-      }
+      var allApproved = approvedCount >= 18;
       if (allApproved) {
         var approvedDateText = formatShortThaiDateJs(t.categoryApprovedAt && t.categoryApprovedAt[catCode]);
         var approvedAtHtml = approvedDateText ? '<span class="d-block small text-success fw-normal text-nowrap">' + escapeHtml(approvedDateText) + '</span>' : '';
         return rosterButton('<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>อนุมัติ</span>', approvedAtHtml);
+      }
+      if (hasRejected) {
+        return rosterButton('<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-exclamation-circle-fill me-1"></i>ปรับแก้ข้อมูลนักกีฬา</span>');
       }
       return rosterButton('<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1"><i class="bi bi-hourglass-split me-1"></i>รอตรวจสอบ</span>');
     }
