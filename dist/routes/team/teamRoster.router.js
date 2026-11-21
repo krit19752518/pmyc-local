@@ -15,6 +15,7 @@ const teamLayout_1 = require("../../teamLayout");
 const upload_1 = require("../../middleware/upload");
 const app_1 = require("../../app");
 const statusHelper_1 = require("../../utils/statusHelper");
+const teamCategoryState_1 = require("../../utils/teamCategoryState");
 const auditLog_service_1 = require("../../services/auditLog.service");
 const teamSession_service_1 = require("../../services/teamSession.service");
 const official_model_1 = require("../../models/official.model");
@@ -2277,7 +2278,6 @@ router.get('/team/official-edit.php', app_1.checkTeamSession, async (req, res) =
     const officialId = req.query.id || '';
     const selectedCategory = (req.query.category || 'ALL').toUpperCase();
     const editOfficial = officialId ? officials.find(o => o.id === officialId) : null;
-    const registeredCategories = Array.isArray(profile.categories) ? profile.categories : profile.categories ? String(profile.categories).split(',').filter(Boolean) : [];
     const getOfficialCats = (off) => {
         if (!off.categories)
             return ['U14'];
@@ -2285,6 +2285,9 @@ router.get('/team/official-edit.php', app_1.checkTeamSession, async (req, res) =
             return off.categories;
         return String(off.categories).split(',').map(c => c.trim()).filter(Boolean);
     };
+    const registeredCategories = teamCategoryState_1.TEAM_CATEGORIES.filter((c) => (0, teamCategoryState_1.getTeamCategoryState)(profile, c) === 'ACTIVE');
+    const existingOfficialCats = editOfficial ? getOfficialCats(editOfficial).map((c) => c.trim().toUpperCase()).filter(Boolean) : [];
+    const legacyInactiveCategories = editOfficial ? existingOfficialCats.filter((c) => !registeredCategories.includes(c)) : [];
     const submittedCatsStr = profile.submitted_categories || '';
     const submittedCatsList = submittedCatsStr.split(',').map((c) => c.trim()).filter(Boolean);
     const u14Count = officials.filter(o => getOfficialCats(o).includes('U14')).length;
@@ -2359,6 +2362,16 @@ router.get('/team/official-edit.php', app_1.checkTeamSession, async (req, res) =
                       </div>
                     `;
     }).join('')}
+                  ${legacyInactiveCategories.map((c) => `
+                      <div class="form-check m-0 d-flex align-items-center gap-2 text-muted opacity-75">
+                        <input type="hidden" name="categories[]" value="${c}">
+                        <input class="form-check-input official-category-checkbox mt-0" type="checkbox" value="${c}" id="off_cat_legacy_${c}" checked disabled>
+                        <label class="form-check-label d-flex align-items-center gap-1 mb-0" for="off_cat_legacy_${c}">
+                          <span class="badge bg-secondary">${c}</span>
+                          <span class="fw-semibold">${c}</span> <span class="small text-muted">(รุ่นเดิมที่ไม่ได้ลงสมัคร/ยกเลิกแล้ว)</span>
+                        </label>
+                      </div>
+                    `).join('')}
                 </div>
               </div>
               <div class="invalid-feedback fw-semibold" id="official_categories_error"></div>
@@ -2747,6 +2760,30 @@ router.post('/api/team/officials/save', app_1.checkTeamSession, teamSession_serv
         const teamNotice = (otherTeamName && String(duplicateOfficial.teamId).trim() !== String(loggedTeamId).trim()) ? ` (ทีม "${otherTeamName}")` : '';
         const orphanNotice = isOrphanRecord ? ' — ข้อมูลนี้ไม่ได้ผูกกับทีมใดในระบบ (ข้อมูลค้าง) กรุณาติดต่อผู้ดูแลระบบเพื่อตรวจสอบและลบข้อมูลเดิม' : '';
         const errMsg = `ข้อมูลระบุตัวตน ${idCardValue} มีอยู่ในระบบแล้ว (${duplicateOfficial.name} - ${duplicateOfficial.position}${teamNotice})${orphanNotice}`;
+        if (isJson)
+            return res.status(400).json({ success: false, error: errMsg });
+        return res.status(400).send(errMsg);
+    }
+    // Guard: Reject categories that are not ACTIVE for the session team (unless already on the edited official)
+    const teamCategoryRes = await db_1.pool.query('SELECT id, categories, cancelled_categories, submitted_categories, is_deleted FROM football_registered_team WHERE id::text = $1 LIMIT 1', [String(loggedTeamId).trim()]);
+    const memTeamForCategory = app_1.teamsDatabase.find((t) => String(t.id).trim() === String(loggedTeamId).trim());
+    const teamCategoryRecord = teamCategoryRes.rows?.[0] || memTeamForCategory || app_1.teamProfile;
+    if (teamCategoryRecord?.is_deleted || teamCategoryRecord?.isDeleted) {
+        const errMsg = 'ไม่พบข้อมูลทีมในระบบ';
+        if (isJson)
+            return res.status(404).json({ success: false, error: errMsg });
+        return res.status(404).send(errMsg);
+    }
+    const existingOfficialCats = existingOfficial
+        ? (0, teamCategoryState_1.splitTeamCategories)(existingOfficial.categories || 'U14')
+        : [];
+    const disallowedCategories = categories.filter((cat) => {
+        if ((0, teamCategoryState_1.getTeamCategoryState)(teamCategoryRecord, cat) === 'ACTIVE')
+            return false;
+        return !(id && existingOfficialCats.includes(cat));
+    });
+    if (disallowedCategories.length > 0) {
+        const errMsg = `ไม่สามารถเพิ่มเจ้าหน้าที่ในรุ่น ${disallowedCategories.join(', ')} ได้ เนื่องจากทีมไม่ได้ลงสมัครหรือยกเลิกการสมัครรุ่นดังกล่าวแล้ว`;
         if (isJson)
             return res.status(400).json({ success: false, error: errMsg });
         return res.status(400).send(errMsg);

@@ -24,6 +24,22 @@ const adminPlayerVerification_router_1 = require("./adminPlayerVerification.rout
 const playerVerification_1 = require("../../views/playerVerification");
 const adminAuth_1 = require("../../adminAuth");
 const app_1 = require("../../app");
+const getRegionByProvince = (province) => {
+    const p = (province || '').trim();
+    if (['เชียงใหม่', 'เชียงราย', 'ลำปาง', 'ลำพูน', 'แม่ฮ่องสอน', 'น่าน', 'พะเยา', 'แพร่', 'อุตรดิตถ์', 'ตาก', 'สุโขทัย', 'พิษณุโลก', 'พิจิตร', 'กำแพงเพชร', 'เพชรบูรณ์', 'นครสวรรค์', 'อุทัยธานี'].includes(p))
+        return 'ภาคเหนือ';
+    if (['ขอนแก่น', 'นครราชสีมา', 'อุดรธานี', 'อุบลราชสีมา', 'บุรีรัมย์', 'สุรินทร์', 'ร้อยเอ็ด', 'สกลนคร', 'กาฬสินธุ์', 'มหาสารคาม', 'เลย', 'หนองคาย', 'ยโสธร', 'ศรีสะเกษ', 'หนองบัวลำภู', 'บึงกาฬ', 'นครพนม', 'มุกดาหาร', 'อำนาจเจริญ', 'ชัยภูมิ'].includes(p))
+        return 'ภาคตะวันออกเฉียงเหนือ';
+    if (['กรุงเทพมหานคร', 'ปทุมธานี', 'นนทบุรี', 'สมุทรปราการ', 'พระนครศรีอยุธยา', 'อ่างทอง', 'ลพบุรี', 'สิงห์บุรี', 'ชัยนาท', 'สระบุรี', 'นครนายก', 'สุพรรณบุรี', 'นครปฐม', 'สมุทรสาคร', 'สมุทรสงคราม'].includes(p))
+        return 'ภาคกลาง';
+    if (['ชลบุรี', 'ระยอง', 'จันทบุรี', 'ตราด', 'ฉะเชิงเทรา', 'ปราจีนบุรี', 'สระแก้ว'].includes(p))
+        return 'ภาคตะวันออก';
+    if (['สงขลา', 'ภูเก็ต', 'สุราษฎร์ธานี', 'นครศรีธรรมราช', 'กระบี่', 'พังงา', 'ตรัง', 'พัทลุง', 'สตูล', 'ยะลา', 'ปัตตานี', 'นราธิวาส', 'ชุมพร', 'ระนอง'].includes(p))
+        return 'ภาคใต้';
+    if (['กาญจนบุรี', 'ราชบุรี', 'เพชรบุรี', 'ประจวบคีรีขันธ์'].includes(p))
+        return 'ภาคตะวันตก';
+    return 'ภาคกลาง';
+};
 // Shared presentation for the team inspection and athlete detail dialogs.
 // Keep existing field IDs so document review and save handlers remain unchanged.
 function renderAthleteInformation(prefix) {
@@ -2052,7 +2068,8 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
         const area = (0, teamRegistrationRank_service_1.getRegistrationArea)(team);
         team.registrationRankMessage = !area.district ? 'ยังไม่ระบุอำเภอ' : (!area.province ? 'ยังไม่ระบุจังหวัด' : '');
     });
-    const allProvinces = Array.from(new Set(allTeams.map(t => t.province).filter(Boolean))).sort();
+    const allProvinces = Array.from(new Set(allTeams.map(t => t.province).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
+    const satRegion = isSatOfficer && satProvince ? getRegionByProvince(satProvince) : '';
     // Fetch all players for category status calculations
     const allPlayersList = await (0, app_1.getDbPlayers)('ALL', isDemo);
     const playersByTeamMap = {};
@@ -2071,9 +2088,55 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
     catch {
         return res.status(503).send('ไม่สามารถตรวจสอบสถานะรุ่นได้ กรุณาลองใหม่');
     }
+    const playerApprovedAtMap = new Map();
+    try {
+        const allTeamIds = allTeams.map(t => String(t.id)).filter(Boolean);
+        if (allTeamIds.length > 0) {
+            const auditRes = await db_1.pool.query(`SELECT team_id, entity_id, MAX(created_at) AS approved_at
+                 FROM football_audit_log
+                 WHERE team_id = ANY($1::varchar[])
+                   AND event_type = 'PLAYER_DOCUMENT_STATUS_CHANGED'
+                   AND new_state->>'docStatus' = 'APPROVED'
+                 GROUP BY team_id, entity_id`, [allTeamIds]);
+            for (const row of auditRes.rows || []) {
+                if (row.team_id && row.entity_id && row.approved_at) {
+                    playerApprovedAtMap.set(`${row.team_id}:${row.entity_id}`, new Date(row.approved_at).toISOString());
+                }
+            }
+        }
+    }
+    catch {
+        // Synthetic test environments may not query football_audit_log.
+    }
     allTeams.forEach(t => {
         t.teamPlayers = playersByTeamMap[t.id] || [];
         t.categoryStates = categoryStates.get(String(t.id));
+        t.region = getRegionByProvince(t.province);
+        const subCats = String(t.submitted_categories || t.submittedCategories || '').split(',').map(c => c.trim().toUpperCase());
+        const catApprovedAt = {};
+        for (const catCode of ['U14', 'U16', 'U18']) {
+            if (!subCats.includes(catCode))
+                continue;
+            const playersInCat = t.teamPlayers.filter((p) => String(p.category || p.categories || '').toUpperCase().split(',').map((c) => c.trim()).includes(catCode));
+            const minApprovedPlayers = 18;
+            const approvedPlayers = playersInCat.filter((p) => p.docStatus === 'APPROVED');
+            if (approvedPlayers.length >= minApprovedPlayers) {
+                const approvedTimestamps = [];
+                for (const p of approvedPlayers) {
+                    const iso = playerApprovedAtMap.get(`${t.id}:${p.id}`);
+                    if (iso) {
+                        const ms = new Date(iso).getTime();
+                        if (Number.isFinite(ms))
+                            approvedTimestamps.push(ms);
+                    }
+                }
+                approvedTimestamps.sort((a, b) => a - b);
+                if (approvedTimestamps.length >= minApprovedPlayers) {
+                    catApprovedAt[catCode] = new Date(approvedTimestamps[minApprovedPlayers - 1]).toISOString();
+                }
+            }
+        }
+        t.categoryApprovedAt = catApprovedAt;
     });
     const categoryAttentionHtml = (team, category) => {
         const state = team.categoryStates?.[category];
@@ -2081,10 +2144,11 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
             return '<span class="text-muted small">ไม่สามารถใช้งานข้อมูลทีมได้</span>';
         if (state !== 'INCONSISTENT' && state !== 'CANCELLED')
             return '';
-        const label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัครแล้ว';
+        const label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัคร';
         return `<span class="text-warning-emphasis small">${label}</span>` + (canChangeTeamStatus
-            ? `<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="${escapeDemoHtml(team.id)}" data-category="${category}" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">ตรวจสอบ / คืนสถานะ</button>` : '');
+            ? `<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="${escapeDemoHtml(team.id)}" data-category="${category}" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">คืนสถานะ</button>` : '');
     };
+    const allRegions = Array.from(new Set(allTeams.map(t => t.region).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
     const initialFilteredTeams = allTeams.filter(t => {
         if (isSatOfficer && satProvince && t.province !== satProvince)
             return false;
@@ -2118,7 +2182,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
     <!-- Filters Bar -->
     <div class="card bg-light border-0 rounded-3 p-3 mb-4">
       <div class="row g-2 align-items-end mb-2">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label small fw-bold text-navy mb-1"><i class="bi bi-search me-1"></i> ค้นหาทีม / สังกัด</label>
           <input type="text" id="filterTeamSearch" class="form-control form-control-sm rounded-3" placeholder="พิมพ์ชื่อทีม หรือสังกัด...">
         </div>
@@ -2129,6 +2193,14 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
         <div class="col-md-2">
           <label class="form-label small fw-bold text-navy mb-1"><i class="bi bi-calendar-event me-1"></i> ถึงวันที่สมัคร</label>
           <input type="date" id="filterTeamEndDate" class="form-control form-control-sm rounded-3">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small fw-bold text-navy mb-1"><i class="bi bi-map me-1"></i> ภาค</label>
+          <select id="filterTeamRegion" class="form-select form-select-sm rounded-3" ${isSatOfficer ? 'disabled' : ''}>
+            ${isSatOfficer
+        ? `<option value="${satRegion}" selected>${satRegion || '-'}</option>`
+        : `<option value="">-- ทั้งหมดทุกภาค --</option>` + allRegions.map(r => `<option value="${r}">${r}</option>`).join('')}
+          </select>
         </div>
         <div class="col-md-2">
           <label class="form-label small fw-bold text-navy mb-1"><i class="bi bi-geo-alt me-1"></i> จังหวัด</label>
@@ -2143,11 +2215,6 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
           <select id="filterTeamDistrict" class="form-select form-select-sm rounded-3">
             <option value="">-- ทั้งหมดทุกเขต/อำเภอ --</option>
           </select>
-        </div>
-        <div class="col-md-1">
-          <button type="button" class="btn btn-sm btn-outline-secondary w-100 rounded-3 py-1" onclick="resetTeamFilters()" title="ล้างตัวกรองทั้งหมด">
-            <i class="bi bi-arrow-counterclockwise"></i> ล้าง
-          </button>
         </div>
       </div>
       <div class="row g-2 align-items-end">
@@ -2168,7 +2235,12 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
             <option value="DELETED">🗑️ ถูกลบแล้ว (DELETED)</option>
           </select>
         </div>
-        <div class="col-md-7 d-flex justify-content-end align-items-center">
+        <div class="col-md-1">
+          <button type="button" class="btn btn-sm btn-outline-secondary w-100 rounded-3 py-1" onclick="resetTeamFilters()" title="ล้างตัวกรองทั้งหมด">
+            <i class="bi bi-arrow-counterclockwise"></i> ล้าง
+          </button>
+        </div>
+        <div class="col-md-6 d-flex justify-content-end align-items-center">
           <span class="fs-5 fw-semibold text-dark">ข้อมูลจากการกรอง จำนวน <span id="filteredTeamsRowCount" class="text-danger">${initialFilteredTeams.length.toLocaleString('en-US')}</span> แถว</span>
         </div>
       </div>
@@ -2182,13 +2254,14 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
             <th style="width: 40px;" class="text-center cursor-pointer" onclick="sortTeamsTable(0)"># <i class="bi bi-arrow-down-up small"></i></th>
             <th class="cursor-pointer" onclick="sortTeamsTable(1)">ชื่อทีม / โรงเรียน / อะคาเดมี่ <i class="bi bi-arrow-down-up small"></i></th>
             <th class="cursor-pointer" onclick="sortTeamsTable(2)">วัน-เวลา สมัคร <i class="bi bi-arrow-down-up small"></i></th>
-            <th class="cursor-pointer" onclick="sortTeamsTable(3)">จังหวัด <i class="bi bi-arrow-down-up small"></i></th>
-            <th class="cursor-pointer" onclick="sortTeamsTable(4)">เขต / อำเภอ <i class="bi bi-arrow-down-up small"></i></th>
-            <th class="cursor-pointer text-center" style="width: 125px;" onclick="sortTeamsTable(5)">รุ่น U14 <i class="bi bi-arrow-down-up small"></i></th>
-            <th class="cursor-pointer text-center" style="width: 125px;" onclick="sortTeamsTable(6)">รุ่น U16 <i class="bi bi-arrow-down-up small"></i></th>
-            <th class="cursor-pointer text-center" style="width: 125px;" onclick="sortTeamsTable(7)">รุ่น U18 <i class="bi bi-arrow-down-up small"></i></th>
-            <th class="cursor-pointer" onclick="sortTeamsTable(8)">ผู้ประสานงาน <i class="bi bi-arrow-down-up small"></i></th>
-            <th class="cursor-pointer text-center" onclick="sortTeamsTable(9)">สถานะทีม <i class="bi bi-arrow-down-up small"></i></th>
+            <th class="cursor-pointer" onclick="sortTeamsTable(3)">ภาค <i class="bi bi-arrow-down-up small"></i></th>
+            <th class="cursor-pointer" onclick="sortTeamsTable(4)">จังหวัด <i class="bi bi-arrow-down-up small"></i></th>
+            <th class="cursor-pointer" onclick="sortTeamsTable(5)">เขต / อำเภอ <i class="bi bi-arrow-down-up small"></i></th>
+            <th class="cursor-pointer text-center" style="width: 125px;" onclick="sortTeamsTable(6)">รุ่น U14 <i class="bi bi-arrow-down-up small"></i></th>
+            <th class="cursor-pointer text-center" style="width: 125px;" onclick="sortTeamsTable(7)">รุ่น U16 <i class="bi bi-arrow-down-up small"></i></th>
+            <th class="cursor-pointer text-center" style="width: 125px;" onclick="sortTeamsTable(8)">รุ่น U18 <i class="bi bi-arrow-down-up small"></i></th>
+            <th class="cursor-pointer" onclick="sortTeamsTable(9)">ผู้ประสานงาน <i class="bi bi-arrow-down-up small"></i></th>
+            <th class="cursor-pointer text-center" onclick="sortTeamsTable(10)">สถานะทีม <i class="bi bi-arrow-down-up small"></i></th>
             <th class="text-center" style="width: 180px;">การจัดการ</th>
           </tr>
         </thead>
@@ -2209,8 +2282,19 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
             const seqBadgeHtml = seqNo > 0 ? `<span class="badge bg-light text-dark border small fw-normal"><i class="bi bi-hash me-1"></i>ลำดับ ${seqNo}</span>` : `<span class="small text-muted">${teamObj.registrationRankMessage || ''}</span>`;
             const counts = status.counts;
             const countsTitle = `นักกีฬา ${counts.players} คน / อนุมัติแล้ว ${counts.approved} คน / ต้องแก้ไข ${counts.needsFix} คน`;
+            const formatShortThaiDateHelper = (dateStr) => {
+                if (!dateStr)
+                    return '';
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime()))
+                    return '';
+                const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+            };
+            const approvedAtText = status.text === 'อนุมัติ' ? formatShortThaiDateHelper(teamObj.categoryApprovedAt?.[catCode]) : '';
+            const approvedAtHtml = approvedAtText ? `<span class="d-block small text-success fw-normal text-nowrap">${approvedAtText}</span>` : '';
             const countsHtml = `<span class="d-block small fw-bold text-nowrap" title="${countsTitle}"><span class="text-primary">${counts.players}</span> / <span class="text-success">${counts.approved}</span> / <span class="text-danger">${counts.needsFix}</span></span>`;
-            const content = `<span class="d-flex flex-column align-items-center gap-1">${seqBadgeHtml}${status.badgeHtml}${countsHtml}</span>`;
+            const content = `<span class="d-flex flex-column align-items-center gap-1">${seqBadgeHtml}${status.badgeHtml}${countsHtml}${approvedAtHtml}</span>`;
             if (isDemo && !canManageDemoData)
                 return content;
             return `<button type="button" class="btn p-0 border-0 bg-transparent" aria-label="${countsTitle}" title="ดูรายชื่อนักกีฬา รุ่น ${catCode} - ${countsTitle}" onclick="openAdminEditTeamModal('${teamObj.id}', '${catCode}')">${content}</button>`;
@@ -2251,6 +2335,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
                 ? `<a class="fw-bold text-navy" href="${escapeDemoHtml(base)}/admin/team-edit.php?id=${escapeDemoHtml(encodeURIComponent(t.id))}" title="แก้ไขข้อมูลทีม">${escapeDemoHtml(t.teamName || '-')}</a>`
                 : `<strong>${escapeDemoHtml(t.teamName || '-')}</strong>`}</td>
                   <td class="text-nowrap small text-muted"><i class="bi bi-clock me-1"></i>${formattedRegTime}</td>
+                  <td><span class="badge bg-light text-dark border">${escapeDemoHtml(t.region || '-')}</span></td>
                   <td><span class="badge bg-light text-dark border">${t.province || '-'}</span></td>
                   <td>${(0, teamArea_1.getTeamDistrictName)(t) || '-'}</td>
                   <td class="text-center">${getCatBadgeHelper(t, 'U14')}</td>
@@ -2261,7 +2346,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
                   <td class="text-center">${actionBtns}</td>
                 </tr>
               `;
-        }).join('') || '<tr><td colspan="11" class="text-center text-muted py-4"><i class="bi bi-inbox me-1"></i> ไม่พบข้อมูลทีมตรงตามเงื่อนไขที่เลือก</td></tr>';
+        }).join('') || '<tr><td colspan="12" class="text-center text-muted py-4"><i class="bi bi-inbox me-1"></i> ไม่พบข้อมูลทีมตรงตามเงื่อนไขที่เลือก</td></tr>';
     })()}
         </tbody>
       </table>
@@ -2322,9 +2407,9 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       var state = t.categoryStates && t.categoryStates[catCode];
       if (state === 'UNAVAILABLE') return '<span class="text-muted small">ไม่สามารถใช้งานข้อมูลทีมได้</span>';
       if (state === 'INCONSISTENT' || state === 'CANCELLED') {
-        var label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัครแล้ว';
+        var label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัคร';
         return '<span class="text-warning-emphasis small">' + label + '</span>' + (window.canChangeTeamStatus
-          ? '<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="' + escapeHtml(t.id) + '" data-category="' + catCode + '" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">ตรวจสอบ / คืนสถานะ</button>' : '');
+          ? '<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="' + escapeHtml(t.id) + '" data-category="' + catCode + '" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">คืนสถานะ</button>' : '');
       }
       var regCats = (t.categories || '').split(',').map(function(c) { return c.trim().toUpperCase(); });
       if (!regCats.includes(catCode)) {
@@ -2348,14 +2433,21 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
         return p.docStatus === 'APPROVED';
       }).length;
       var countsTitle = 'นักกีฬา ' + playerCount + ' คน / อนุมัติแล้ว ' + approvedCount + ' คน / ต้องแก้ไข ' + needsFixCount + ' คน';
-      function rosterButton(badgeHtml) {
+      function formatShortThaiDateJs(dateStr) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        var months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        return d.getDate() + ' ' + months[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+      }
+      function rosterButton(badgeHtml, approvedAtHtml) {
         var countsHtml = '<span class="d-block small fw-bold text-nowrap" title="' + countsTitle + '"><span class="text-primary">' + playerCount + '</span> / <span class="text-success">' + approvedCount + '</span> / <span class="text-danger">' + needsFixCount + '</span></span>';
-        var content = '<span class="d-flex flex-column align-items-center gap-1">' + seqBadgeHtml + badgeHtml + countsHtml + '</span>';
+        var content = '<span class="d-flex flex-column align-items-center gap-1">' + seqBadgeHtml + badgeHtml + countsHtml + (approvedAtHtml || '') + '</span>';
         if (window.isDemoMode === true && window.canManageDemoData !== true) return content;
         return '<button type="button" class="btn p-0 border-0 bg-transparent" aria-label="' + countsTitle + '" title="ดูรายชื่อนักกีฬา รุ่น ' + catCode + ' - ' + countsTitle + '" onclick="openAdminEditTeamModal(&quot;' + escapeHtml(t.id) + '&quot;, &quot;' + catCode + '&quot;)">' + content + '</button>';
       }
       if (cancelledCats.includes(catCode)) {
-        return rosterButton('<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>ยกเลิกการสมัครแล้ว</span>');
+        return rosterButton('<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>ยกเลิกการสมัคร</span>');
       }
       if (playersInCat.length === 0 || !isSubmitted) {
         return rosterButton('<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i class="bi bi-person-plus me-1"></i>รอเพิ่มนักกีฬา</span>');
@@ -2363,14 +2455,14 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       var hasRejected = playersInCat.some(function(p) {
         return p.docStatus !== 'CORRECTED' && p.docStatus !== 'PENDING' && p.docStatus !== 'APPROVED' && (p.docStatus === 'REJECTED' || p.docStatus === 'ACTION_REQUIRED' || Boolean(p.remarks));
       });
-      var allApproved = playersInCat.length > 0 && playersInCat.every(function(p) {
-        return p.docStatus === 'APPROVED';
-      });
+      var allApproved = approvedCount >= 18;
+      if (allApproved) {
+        var approvedDateText = formatShortThaiDateJs(t.categoryApprovedAt && t.categoryApprovedAt[catCode]);
+        var approvedAtHtml = approvedDateText ? '<span class="d-block small text-success fw-normal text-nowrap">' + escapeHtml(approvedDateText) + '</span>' : '';
+        return rosterButton('<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>อนุมัติ</span>', approvedAtHtml);
+      }
       if (hasRejected) {
         return rosterButton('<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-exclamation-circle-fill me-1"></i>ปรับแก้ข้อมูลนักกีฬา</span>');
-      }
-      if (allApproved) {
-        return rosterButton('<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>อนุมัติ</span>');
       }
       return rosterButton('<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1"><i class="bi bi-hourglass-split me-1"></i>รอตรวจสอบ</span>');
     }
@@ -2418,6 +2510,8 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       const startDateVal = startDateEl ? startDateEl.value : '';
       const endDateEl = document.getElementById('filterTeamEndDate');
       const endDateVal = endDateEl ? endDateEl.value : '';
+      const regEl = document.getElementById('filterTeamRegion');
+      const reg = window.isSatOfficer ? '' : (regEl ? regEl.value : '');
       const provEl = document.getElementById('filterTeamProvince');
       const prov = window.isSatOfficer ? window.satProvince : (provEl ? provEl.value : '');
       const distEl = document.getElementById('filterTeamDistrict');
@@ -2438,6 +2532,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
           if (stat && t.status !== stat) return false;
         }
 
+        if (reg && (t.region || '') !== reg) return false;
         if (prov && window.PmycTeamArea.normalizeProvince(t.province) !== window.PmycTeamArea.normalizeProvince(prov)) return false;
         if (dist) {
           const teamDist = window.PmycTeamArea.getTeamDistrictName(t);
@@ -2477,13 +2572,14 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
           const timeB = b.createdAt || b.created_at ? new Date(b.createdAt || b.created_at).getTime() : 0;
           return dir === 'asc' ? timeA - timeB : timeB - timeA;
         }
-        else if (colIdx === 3) { valA = a.province || ''; valB = b.province || ''; }
-        else if (colIdx === 4) { valA = window.PmycTeamArea.getTeamDistrictName(a); valB = window.PmycTeamArea.getTeamDistrictName(b); }
-        else if (colIdx === 5) { valA = (a.categories || '').includes('U14') ? '1' : '0'; valB = (b.categories || '').includes('U14') ? '1' : '0'; }
-        else if (colIdx === 6) { valA = (a.categories || '').includes('U16') ? '1' : '0'; valB = (b.categories || '').includes('U16') ? '1' : '0'; }
-        else if (colIdx === 7) { valA = (a.categories || '').includes('U18') ? '1' : '0'; valB = (b.categories || '').includes('U18') ? '1' : '0'; }
-        else if (colIdx === 8) { valA = a.managerName || ''; valB = b.managerName || ''; }
-        else if (colIdx === 9) { valA = a.status || ''; valB = b.status || ''; }
+        else if (colIdx === 3) { valA = a.region || ''; valB = b.region || ''; }
+        else if (colIdx === 4) { valA = a.province || ''; valB = b.province || ''; }
+        else if (colIdx === 5) { valA = window.PmycTeamArea.getTeamDistrictName(a); valB = window.PmycTeamArea.getTeamDistrictName(b); }
+        else if (colIdx === 6) { valA = (a.categories || '').includes('U14') ? '1' : '0'; valB = (b.categories || '').includes('U14') ? '1' : '0'; }
+        else if (colIdx === 7) { valA = (a.categories || '').includes('U16') ? '1' : '0'; valB = (b.categories || '').includes('U16') ? '1' : '0'; }
+        else if (colIdx === 8) { valA = (a.categories || '').includes('U18') ? '1' : '0'; valB = (b.categories || '').includes('U18') ? '1' : '0'; }
+        else if (colIdx === 9) { valA = a.managerName || ''; valB = b.managerName || ''; }
+        else if (colIdx === 10) { valA = a.status || ''; valB = b.status || ''; }
 
         return dir === 'asc' ? valA.localeCompare(valB, 'th') : valB.localeCompare(valA, 'th');
       });
@@ -2504,7 +2600,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
 
       if (!tbody) return;
       if (totalItems === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4"><i class="bi bi-inbox me-1"></i> ไม่พบข้อมูลทีมตรงตามเงื่อนไขที่เลือก</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-4"><i class="bi bi-inbox me-1"></i> ไม่พบข้อมูลทีมตรงตามเงื่อนไขที่เลือก</td></tr>';
         if (pagContainer) pagContainer.innerHTML = '';
         return;
       }
@@ -2528,6 +2624,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
               ? '<a class="fw-bold text-navy" href="' + escapeHtml(base) + '/admin/team-edit.php?id=' + escapeHtml(encodeURIComponent(t.id)) + '" title="แก้ไขข้อมูลทีม">' + escapeHtml(t.teamName || '-') + '</a>'
               : '<strong>' + escapeHtml(t.teamName || '-') + '</strong>') + '</td>' +
             '<td class="text-nowrap small text-muted"><i class="bi bi-clock me-1"></i>' + formattedTime + '</td>' +
+            '<td><span class="badge bg-light text-dark border">' + escapeHtml(t.region || '-') + '</span></td>' +
             '<td><span class="badge bg-light text-dark border">' + escapeHtml(t.province || '-') + '</span></td>' +
             '<td>' + escapeHtml(window.PmycTeamArea.getTeamDistrictName(t) || '-') + '</td>' +
             '<td class="text-center">' + getCatBadgeJs(t, 'U14') + '</td>' +
@@ -2584,6 +2681,30 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       return window.PmycTeamArea.normalizeDistrictName(district, province);
     }
 
+    function updateProvinceOptions() {
+      if (window.isSatOfficer) return;
+      const regEl = document.getElementById('filterTeamRegion');
+      const selectedReg = regEl ? regEl.value : '';
+      const provSelect = document.getElementById('filterTeamProvince');
+      if (!provSelect) return;
+      const prevProv = provSelect.value;
+      const provinces = Array.from(new Set(
+        window.rawTeamsData
+          .filter(t => !selectedReg || t.region === selectedReg)
+          .map(t => t.province)
+          .filter(Boolean)
+      )).sort((a, b) => a.localeCompare(b, 'th'));
+      provSelect.innerHTML = '<option value="">-- ทั้งหมดทุกจังหวัด --</option>';
+      provinces.forEach(p => {
+        provSelect.innerHTML += '<option value="' + escapeHtml(p) + '">' + escapeHtml(p) + '</option>';
+      });
+      if (prevProv && provinces.includes(prevProv)) {
+        provSelect.value = prevProv;
+      } else {
+        provSelect.value = '';
+      }
+    }
+
     function updateDistrictOptions() {
       const provEl = document.getElementById('filterTeamProvince');
       const selectedProv = window.isSatOfficer ? window.satProvince : (provEl ? provEl.value : '');
@@ -2608,6 +2729,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       const searchInput = document.getElementById('filterTeamSearch');
       const startDateEl = document.getElementById('filterTeamStartDate');
       const endDateEl = document.getElementById('filterTeamEndDate');
+      const regEl = document.getElementById('filterTeamRegion');
       const provEl = document.getElementById('filterTeamProvince');
       const distEl = document.getElementById('filterTeamDistrict');
       const genderEl = document.getElementById('filterTeamGender');
@@ -2616,6 +2738,8 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       if (searchInput) searchInput.value = '';
       if (startDateEl) startDateEl.value = '';
       if (endDateEl) endDateEl.value = '';
+      if (regEl && !window.isSatOfficer) regEl.value = '';
+      if (!window.isSatOfficer) updateProvinceOptions();
       if (provEl && !window.isSatOfficer) provEl.value = '';
       if (genderEl) genderEl.value = '';
       if (statEl) statEl.value = '';
@@ -3028,7 +3152,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
               if (badge && (isCancelled || team.status !== 'APPROVED')) {
                 if (isCancelled) {
                   badge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-6';
-                  badge.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการสมัครแล้ว';
+                  badge.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการสมัคร';
                 } else {
                   badge.className = isSubmitted ? 'badge bg-warning text-dark px-3 py-2 fs-6' : 'badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 fs-6';
                   badge.innerHTML = isSubmitted ? '<i class="bi bi-hourglass-split me-1"></i> รอตรวจสอบนักกีฬา' : '<i class="bi bi-person-plus me-1"></i> ยังไม่ได้กดส่งรายชื่อ';
@@ -3060,7 +3184,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
         if (modalStatusBadge) {
           if (categoryCode && cancelledCats.includes(categoryCode)) {
             modalStatusBadge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-6';
-            modalStatusBadge.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการสมัครแล้ว';
+            modalStatusBadge.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการสมัคร';
           } else if (team.status === 'APPROVED') {
             modalStatusBadge.className = 'badge bg-success px-3 py-2 fs-6';
             modalStatusBadge.innerHTML = '<i class="bi bi-check-circle me-1"></i> รับรองแล้ว (APPROVED)';
@@ -3862,6 +3986,12 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       if (startDateEl) startDateEl.addEventListener('change', renderTeamsTable);
       const endDateEl = document.getElementById('filterTeamEndDate');
       if (endDateEl) endDateEl.addEventListener('change', renderTeamsTable);
+      const regEl = document.getElementById('filterTeamRegion');
+      if (regEl) regEl.addEventListener('change', () => {
+        updateProvinceOptions();
+        updateDistrictOptions();
+        renderTeamsTable();
+      });
       const provEl = document.getElementById('filterTeamProvince');
       if (provEl) provEl.addEventListener('change', () => {
         updateDistrictOptions();

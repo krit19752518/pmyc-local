@@ -65,9 +65,9 @@ describe('Status Helper Unit Tests', () => {
       const team = { status: 'PENDING', categories: 'U16,U18', cancelled_categories: 'U18', submitted_categories: '' };
       const res = getCategoryStatus(team, 'U18', []);
 
-      expect(res.text).toBe('ยกเลิกการสมัครแล้ว');
+      expect(res.text).toBe('ยกเลิกการสมัคร');
       expect(res.badgeHtml).toContain('bg-danger-subtle');
-      expect(res.badgeHtml).toContain('ยกเลิกการสมัครแล้ว');
+      expect(res.badgeHtml).toContain('ยกเลิกการสมัคร');
     });
 
     it('UT-CAT-STATUS-04: Should return "รอตรวจสอบ" when roster submitted and players pending', () => {

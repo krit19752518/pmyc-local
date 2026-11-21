@@ -617,6 +617,134 @@ describe('Team Official Management & Validation', () => {
       }
     }
   });
+
+  it('POST /api/team/officials/save should reject adding a new official to an unregistered category', async () => {
+    const prevCats = teamProfile.categories;
+    const prevCancelled = teamProfile.cancelled_categories;
+    teamProfile.categories = ['U18'];
+    teamProfile.cancelled_categories = '';
+
+    try {
+      const res = await withManagerDocument(request(app)
+        .post('/api/team/officials/save')
+        .set('Cookie', teamSessionCookies('FTM-001'))
+        .set('X-Requested-With', 'XMLHttpRequest'), {
+          name: 'นายทดสอบ รุ่นไม่ได้สมัคร',
+          position: 'ผู้จัดการทีม',
+          id_card: '1100400088801',
+          phone: '0811111111',
+          categories: 'U14'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toContain('U14');
+    } finally {
+      teamProfile.categories = prevCats;
+      teamProfile.cancelled_categories = prevCancelled;
+    }
+  });
+
+  it('POST /api/team/officials/save should reject adding a new official to a cancelled category', async () => {
+    const prevCats = teamProfile.categories;
+    const prevCancelled = teamProfile.cancelled_categories;
+    teamProfile.categories = ['U14', 'U18'];
+    teamProfile.cancelled_categories = 'U14';
+
+    try {
+      const res = await withManagerDocument(request(app)
+        .post('/api/team/officials/save')
+        .set('Cookie', teamSessionCookies('FTM-001'))
+        .set('X-Requested-With', 'XMLHttpRequest'), {
+          name: 'นายทดสอบ รุ่นยกเลิกแล้ว',
+          position: 'ผู้จัดการทีม',
+          id_card: '1100400088802',
+          phone: '0811111112',
+          categories: 'U14'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toContain('U14');
+    } finally {
+      teamProfile.categories = prevCats;
+      teamProfile.cancelled_categories = prevCancelled;
+    }
+  });
+
+  it('POST /api/team/officials/save should allow keeping legacy category on edit while rejecting newly added inactive category', async () => {
+    const prevCats = teamProfile.categories;
+    const prevCancelled = teamProfile.cancelled_categories;
+    const testOfficialId = `OFF-LEGACY-EDIT-${Date.now()}`;
+    const existing = {
+      id: testOfficialId,
+      teamId: 'FTM-001',
+      name: 'นายทดสอบ แก้ไขรุ่นเดิม',
+      position: 'ผู้ฝึกสอน',
+      idCard: `LEG-${Date.now()}`,
+      phone: '0812345670',
+      categories: 'U14,U18'
+    };
+    officialsDatabase.push(existing);
+    teamProfile.categories = ['U18'];
+    teamProfile.cancelled_categories = 'U16';
+
+    try {
+      const allowedRes = await request(app)
+        .post('/api/team/officials/save')
+        .set('Cookie', teamSessionCookies('FTM-001'))
+        .set('X-Requested-With', 'XMLHttpRequest')
+        .field('id', testOfficialId)
+        .field('name', 'นายทดสอบ แก้ไขชื่อได้')
+        .field('position', 'ผู้ฝึกสอน')
+        .field('id_card', existing.idCard)
+        .field('phone', '0812345670')
+        .field('categories', 'U14,U18');
+
+      expect(allowedRes.status).toBe(200);
+      expect(allowedRes.body.success).toBe(true);
+
+      const rejectedRes = await request(app)
+        .post('/api/team/officials/save')
+        .set('Cookie', teamSessionCookies('FTM-001'))
+        .set('X-Requested-With', 'XMLHttpRequest')
+        .field('id', testOfficialId)
+        .field('name', 'นายทดสอบ เพิ่มรุ่นที่ยกเลิก')
+        .field('position', 'ผู้ฝึกสอน')
+        .field('id_card', existing.idCard)
+        .field('phone', '0812345670')
+        .field('categories', 'U14,U16,U18');
+
+      expect(rejectedRes.status).toBe(400);
+      expect(rejectedRes.body.success).toBe(false);
+      expect(rejectedRes.body.error).toContain('U16');
+    } finally {
+      teamProfile.categories = prevCats;
+      teamProfile.cancelled_categories = prevCancelled;
+      const index = officialsDatabase.findIndex((official: any) => official.id === testOfficialId);
+      if (index !== -1) officialsDatabase.splice(index, 1);
+    }
+  });
+
+  it('GET /team/official-edit.php should only render ACTIVE categories as selectable checkboxes', async () => {
+    const prevCats = teamProfile.categories;
+    const prevCancelled = teamProfile.cancelled_categories;
+    teamProfile.categories = ['U14', 'U18'];
+    teamProfile.cancelled_categories = 'U14';
+
+    try {
+      const res = await request(app)
+        .get('/team/official-edit.php?category=ALL')
+        .set('Cookie', ['team_logged_in=true', 'team_id=FTM-001']);
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('id="off_cat_U18"');
+      expect(res.text).not.toContain('id="off_cat_U14"');
+    } finally {
+      teamProfile.categories = prevCats;
+      teamProfile.cancelled_categories = prevCancelled;
+    }
+  });
 });
 
 // Valid synthetic uploads keep identity-focused tests independent of the manager-document guard.

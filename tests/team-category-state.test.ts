@@ -180,7 +180,7 @@ test('team and admin show inconsistency with no misleading Add; generated script
   expect(overview.text).toContain('ข้อมูลสถานะรุ่นไม่สอดคล้อง');
   expect(overview.text).not.toContain('data-add-category="U16"');
   const admin = await request(app).get('/admin/teams.php').set('Cookie', superAdminCookie());
-  expect(admin.text).toContain('ตรวจสอบ / คืนสถานะ');
+  expect(admin.text).toContain('คืนสถานะ');
   const data = JSON.parse(admin.text.match(/id="rawTeamsDataJson">([\s\S]*?)<\/script>/)![1]);
   expect(data.find((t: any) => t.id === id).categoryStates.U16).toBe('INCONSISTENT');
   for (const page of [admin, overview]) for (const match of page.text.matchAll(/<script(?![^>]*type="application\/json")[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
