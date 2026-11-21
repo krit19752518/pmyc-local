@@ -2207,7 +2207,7 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
             return '';
         const label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัครแล้ว';
         return `<span class="text-warning-emphasis small">${label}</span>` + (canChangeTeamStatus
-            ? `<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="${escapeDemoHtml(team.id)}" data-category="${category}" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">ตรวจสอบ / คืนสถานะ</button>` : '');
+            ? `<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="${escapeDemoHtml(team.id)}" data-category="${category}" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">คืนสถานะ</button>` : '');
     };
     const allRegions = Array.from(new Set(allTeams.map(t => t.region).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
     const initialFilteredTeams = allTeams.filter(t => {
@@ -2468,7 +2468,7 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
       if (state === 'INCONSISTENT' || state === 'CANCELLED') {
         var label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัครแล้ว';
         return '<span class="text-warning-emphasis small">' + label + '</span>' + (window.canChangeTeamStatus
-          ? '<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="' + escapeHtml(t.id) + '" data-category="' + catCode + '" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">ตรวจสอบ / คืนสถานะ</button>' : '');
+          ? '<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="' + escapeHtml(t.id) + '" data-category="' + catCode + '" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">คืนสถานะ</button>' : '');
       }
       var regCats = (t.categories || '').split(',').map(function(c) { return c.trim().toUpperCase(); });
       if (!regCats.includes(catCode)) {
