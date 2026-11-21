@@ -2117,8 +2117,9 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
             if (!subCats.includes(catCode))
                 continue;
             const playersInCat = t.teamPlayers.filter((p) => String(p.category || p.categories || '').toUpperCase().split(',').map((c) => c.trim()).includes(catCode));
+            const minApprovedPlayers = 18;
             const approvedPlayers = playersInCat.filter((p) => p.docStatus === 'APPROVED');
-            if (approvedPlayers.length >= statusHelper_1.MIN_APPROVED_CATEGORY_PLAYERS) {
+            if (approvedPlayers.length >= minApprovedPlayers) {
                 const approvedTimestamps = [];
                 for (const p of approvedPlayers) {
                     const iso = playerApprovedAtMap.get(`${t.id}:${p.id}`);
@@ -2129,8 +2130,8 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
                     }
                 }
                 approvedTimestamps.sort((a, b) => a - b);
-                if (approvedTimestamps.length >= statusHelper_1.MIN_APPROVED_CATEGORY_PLAYERS) {
-                    catApprovedAt[catCode] = new Date(approvedTimestamps[statusHelper_1.MIN_APPROVED_CATEGORY_PLAYERS - 1]).toISOString();
+                if (approvedTimestamps.length >= minApprovedPlayers) {
+                    catApprovedAt[catCode] = new Date(approvedTimestamps[minApprovedPlayers - 1]).toISOString();
                 }
             }
         }
