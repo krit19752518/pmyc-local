@@ -2144,7 +2144,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
             return '<span class="text-muted small">ไม่สามารถใช้งานข้อมูลทีมได้</span>';
         if (state !== 'INCONSISTENT' && state !== 'CANCELLED')
             return '';
-        const label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัครแล้ว';
+        const label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัคร';
         return `<span class="text-warning-emphasis small">${label}</span>` + (canChangeTeamStatus
             ? `<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="${escapeDemoHtml(team.id)}" data-category="${category}" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">คืนสถานะ</button>` : '');
     };
@@ -2407,7 +2407,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
       var state = t.categoryStates && t.categoryStates[catCode];
       if (state === 'UNAVAILABLE') return '<span class="text-muted small">ไม่สามารถใช้งานข้อมูลทีมได้</span>';
       if (state === 'INCONSISTENT' || state === 'CANCELLED') {
-        var label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัครแล้ว';
+        var label = state === 'INCONSISTENT' ? 'ตรวจสอบสถานะรุ่น' : 'ยกเลิกการสมัคร';
         return '<span class="text-warning-emphasis small">' + label + '</span>' + (window.canChangeTeamStatus
           ? '<button type="button" class="btn btn-sm btn-outline-warning ms-1" data-team-id="' + escapeHtml(t.id) + '" data-category="' + catCode + '" onclick="reviewTeamCategory(this.dataset.teamId, this.dataset.category)">คืนสถานะ</button>' : '');
       }
@@ -2447,7 +2447,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
         return '<button type="button" class="btn p-0 border-0 bg-transparent" aria-label="' + countsTitle + '" title="ดูรายชื่อนักกีฬา รุ่น ' + catCode + ' - ' + countsTitle + '" onclick="openAdminEditTeamModal(&quot;' + escapeHtml(t.id) + '&quot;, &quot;' + catCode + '&quot;)">' + content + '</button>';
       }
       if (cancelledCats.includes(catCode)) {
-        return rosterButton('<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>ยกเลิกการสมัครแล้ว</span>');
+        return rosterButton('<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>ยกเลิกการสมัคร</span>');
       }
       if (playersInCat.length === 0 || !isSubmitted) {
         return rosterButton('<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i class="bi bi-person-plus me-1"></i>รอเพิ่มนักกีฬา</span>');
@@ -3152,7 +3152,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
               if (badge && (isCancelled || team.status !== 'APPROVED')) {
                 if (isCancelled) {
                   badge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-6';
-                  badge.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการสมัครแล้ว';
+                  badge.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการสมัคร';
                 } else {
                   badge.className = isSubmitted ? 'badge bg-warning text-dark px-3 py-2 fs-6' : 'badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 fs-6';
                   badge.innerHTML = isSubmitted ? '<i class="bi bi-hourglass-split me-1"></i> รอตรวจสอบนักกีฬา' : '<i class="bi bi-person-plus me-1"></i> ยังไม่ได้กดส่งรายชื่อ';
@@ -3184,7 +3184,7 @@ async function renderRegisteredTeamsPage(req, res, isDemo = false) {
         if (modalStatusBadge) {
           if (categoryCode && cancelledCats.includes(categoryCode)) {
             modalStatusBadge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-6';
-            modalStatusBadge.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการสมัครแล้ว';
+            modalStatusBadge.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการสมัคร';
           } else if (team.status === 'APPROVED') {
             modalStatusBadge.className = 'badge bg-success px-3 py-2 fs-6';
             modalStatusBadge.innerHTML = '<i class="bi bi-check-circle me-1"></i> รับรองแล้ว (APPROVED)';

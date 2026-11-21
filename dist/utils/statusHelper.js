@@ -96,8 +96,8 @@ function getCategoryStatus(team, categoryCode, teamPlayers = []) {
     const cancelledCats = cancelledCatsStr.split(',').map(c => c.trim().toUpperCase());
     if (cancelledCats.includes(code)) {
         return {
-            text: 'ยกเลิกการสมัครแล้ว',
-            badgeHtml: '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>ยกเลิกการสมัครแล้ว</span>',
+            text: 'ยกเลิกการสมัคร',
+            badgeHtml: '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>ยกเลิกการสมัคร</span>',
             counts
         };
     }

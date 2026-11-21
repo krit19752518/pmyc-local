@@ -210,7 +210,7 @@ describe('Team Registration & Category Workflow Guards', () => {
         .set('Cookie', ['admin_session=true', 'admin_user=admin']);
 
       expect(adminTeamsRes.status).toBe(200);
-      expect(adminTeamsRes.text).toContain('ยกเลิกการสมัครแล้ว');
+      expect(adminTeamsRes.text).toContain('ยกเลิกการสมัคร');
       expect(adminTeamsRes.text).toContain('cancelledCats.includes(categoryCode)');
 
       // 3. Inspect /team/team.php (U14 should be unchecked and disabled with cancelled badge)
