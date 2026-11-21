@@ -8,7 +8,7 @@ import path from "path";
 import { createHash } from "crypto";
 import { pool } from "../../db";
 import { renderAdminLayout } from "../../adminLayout";
-import { getCategoryStatus, getTeamStatusInfo, getPlayerDocStatusInfo, getCompletedApprovalRanks, MIN_APPROVED_CATEGORY_PLAYERS } from "../../utils/statusHelper";
+import { getCategoryStatus, getTeamStatusInfo, getPlayerDocStatusInfo, getCompletedApprovalRanks } from "../../utils/statusHelper";
 import { getAuditFieldChanges, writeAuditLog } from "../../services/auditLog.service";
 import { withDbTransaction } from "../../services/dbTransaction.service";
 import { adminPortalForRequest, buildAdminSessionCookies, checkAdminSession, clearAdminSessionCookies } from "../../services/adminSession.service";
@@ -2179,8 +2179,9 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
             const playersInCat = t.teamPlayers.filter((p: any) =>
                 String(p.category || p.categories || '').toUpperCase().split(',').map((c: string) => c.trim()).includes(catCode)
             );
+            const minApprovedPlayers = 18;
             const approvedPlayers = playersInCat.filter((p: any) => p.docStatus === 'APPROVED');
-            if (approvedPlayers.length >= MIN_APPROVED_CATEGORY_PLAYERS) {
+            if (approvedPlayers.length >= minApprovedPlayers) {
                 const approvedTimestamps: number[] = [];
                 for (const p of approvedPlayers) {
                     const iso = playerApprovedAtMap.get(`${t.id}:${p.id}`);
@@ -2190,8 +2191,8 @@ async function renderRegisteredTeamsPage(req: PortalRequest, res: Response, isDe
                     }
                 }
                 approvedTimestamps.sort((a, b) => a - b);
-                if (approvedTimestamps.length >= MIN_APPROVED_CATEGORY_PLAYERS) {
-                    catApprovedAt[catCode] = new Date(approvedTimestamps[MIN_APPROVED_CATEGORY_PLAYERS - 1]).toISOString();
+                if (approvedTimestamps.length >= minApprovedPlayers) {
+                    catApprovedAt[catCode] = new Date(approvedTimestamps[minApprovedPlayers - 1]).toISOString();
                 }
             }
         }
