@@ -586,7 +586,7 @@ describe('Admin Role & Permissions Automated Test Suite', () => {
       expect(res.text).toContain('sortTeamsTable(3)">ภาค');
       expect(res.text).toContain('sortTeamsTable(9)">ผู้ประสานงาน');
       expect(res.text).toContain('teamsPaginationContainer');
-      expect(res.text).toContain('<div class="col-md-7 d-flex justify-content-end align-items-center">\n          <span class="fs-5 fw-semibold text-dark">ข้อมูลจากการกรอง จำนวน <span id="filteredTeamsRowCount" class="text-danger">');
+      expect(res.text).toContain('<div class="col-md-6 d-flex justify-content-end align-items-center">\n          <span class="fs-5 fw-semibold text-dark">ข้อมูลจากการกรอง จำนวน <span id="filteredTeamsRowCount" class="text-danger">');
       expect(res.text).toMatch(/id="filteredTeamsRowCount" class="text-danger">[\d,]+<\/span> แถว/);
       expect(res.text).toContain("filteredCountEl.textContent = totalItems.toLocaleString('en-US');");
       expect(res.text.indexOf('id="filterTeamStatus"')).toBeLessThan(res.text.indexOf('id="filteredTeamsRowCount"'));
