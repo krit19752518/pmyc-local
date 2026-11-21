@@ -25,6 +25,22 @@ const adminPlayerVerification_router_1 = require("./adminPlayerVerification.rout
 const playerVerification_1 = require("../../views/playerVerification");
 const adminAuth_1 = require("../../adminAuth");
 const app_1 = require("../../app");
+const getRegionByProvince = (province) => {
+    const p = (province || '').trim();
+    if (['เชียงใหม่', 'เชียงราย', 'ลำปาง', 'ลำพูน', 'แม่ฮ่องสอน', 'น่าน', 'พะเยา', 'แพร่', 'อุตรดิตถ์', 'ตาก', 'สุโขทัย', 'พิษณุโลก', 'พิจิตร', 'กำแพงเพชร', 'เพชรบูรณ์', 'นครสวรรค์', 'อุทัยธานี'].includes(p))
+        return 'ภาคเหนือ';
+    if (['ขอนแก่น', 'นครราชสีมา', 'อุดรธานี', 'อุบลราชสีมา', 'บุรีรัมย์', 'สุรินทร์', 'ร้อยเอ็ด', 'สกลนคร', 'กาฬสินธุ์', 'มหาสารคาม', 'เลย', 'หนองคาย', 'ยโสธร', 'ศรีสะเกษ', 'หนองบัวลำภู', 'บึงกาฬ', 'นครพนม', 'มุกดาหาร', 'อำนาจเจริญ', 'ชัยภูมิ'].includes(p))
+        return 'ภาคตะวันออกเฉียงเหนือ';
+    if (['กรุงเทพมหานคร', 'ปทุมธานี', 'นนทบุรี', 'สมุทรปราการ', 'พระนครศรีอยุธยา', 'อ่างทอง', 'ลพบุรี', 'สิงห์บุรี', 'ชัยนาท', 'สระบุรี', 'นครนายก', 'สุพรรณบุรี', 'นครปฐม', 'สมุทรสาคร', 'สมุทรสงคราม'].includes(p))
+        return 'ภาคกลาง';
+    if (['ชลบุรี', 'ระยอง', 'จันทบุรี', 'ตราด', 'ฉะเชิงเทรา', 'ปราจีนบุรี', 'สระแก้ว'].includes(p))
+        return 'ภาคตะวันออก';
+    if (['สงขลา', 'ภูเก็ต', 'สุราษฎร์ธานี', 'นครศรีธรรมราช', 'กระบี่', 'พังงา', 'ตรัง', 'พัทลุง', 'สตูล', 'ยะลา', 'ปัตตานี', 'นราธิวาส', 'ชุมพร', 'ระนอง'].includes(p))
+        return 'ภาคใต้';
+    if (['กาญจนบุรี', 'ราชบุรี', 'เพชรบุรี', 'ประจวบคีรีขันธ์'].includes(p))
+        return 'ภาคตะวันตก';
+    return 'ภาคกลาง';
+};
 // Shared presentation for the team inspection and athlete detail dialogs.
 // Keep existing field IDs so document review and save handlers remain unchanged.
 function renderAthleteInformation(prefix) {
